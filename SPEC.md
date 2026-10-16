@@ -2,21 +2,21 @@
 
 ## 1. MVP at a Glance
 
-- **Product vision:** a general student–teacher tutor, not a chatbot. Topic or short brief in → **live AI teaching on Excalidraw** → student questions → quiz → lesson summary → Teach-the-AI / **live voice-agent viva** as the product grows. Voice is not “basic browser TTS forever” — Stretch puts **Vapi and/or LiveKit voice agents on the same deployed URL**.
+- **Product vision:** a general student–teacher tutor. Topic or short brief in → **live AI teaching on Excalidraw** → student questions → quiz → lesson summary; Stretch adds Teach-the-AI and a **Vapi** voice-agent viva on the same deployed URL.
 - **User:** STEM students (including NED) who need conceptual teaching, practice, and viva-style preparation.
 - **Hackathon Core (what judges must complete):** `binomial_square` pack — sign up + TOTP 2FA → wrong answer → honest diagnosis → **live narrated Excalidraw whiteboard explanation by AI (draw + voice/captions)** → text question on board → `2bx` board task → interactive quiz/transfer → on-screen lesson summary → sign out/in with data intact.
-- **Yes — live whiteboard teaching is Core:** Gemini returns step-by-step board operations; the deployed app draws them live on Excalidraw (or SVG fallback) while speaking. Judges see this on the public URL without MCP.
+- **Live whiteboard teaching is Core:** Gemini returns step-by-step board operations; the deployed app draws them live on Excalidraw (or SVG fallback) while speaking. Judges see this on the public URL without MCP.
 - **Why a first pack:** four days need one deep, verifiable subject. Packs and topic briefs share one teach → ask → quiz → summary → save loop.
-- **Stretch (wow layer on the deployed URL, after Core is green):** **live voice agents via Vapi and/or LiveKit** for teaching narration + oral viva; Teach-the-AI; barge-in. Core keeps Web Speech + captions as **fallback** so M1–M6 never depend on third-party voice infra.
-- **Roadmap:** full syllabus upload, multi-party LiveKit classrooms, richer Vapi agent routing, test-prep engine, PDF notes, pack `round_robin_scheduler`.
-- **Stack:** Next.js, TypeScript, Excalidraw npm package (SVG fallback), Supabase, Gemini 2.5 Flash, Zod, mathjs, Tailwind, shadcn/ui, Web Speech API, **Vapi and/or LiveKit** (Stretch), Vercel.
-- **Winning thesis:** most teams ship a chatbot or mute text tutor; we ship board + **live voice agents** + quiz + Teach-the-AI + viva on one deployed product with durable auth’d evidence.
+- **Stretch (after Core is green):** **Vapi** voice agent for teaching narration and oral viva; Teach-the-AI; barge-in. Core keeps Web Speech + captions as **fallback** so M1–M6 do not depend on Vapi.
+- **Roadmap:** full syllabus upload, LiveKit multi-party classrooms, richer Vapi agent routing, test-prep engine, PDF notes, pack `round_robin_scheduler`.
+- **Stack:** Next.js, TypeScript, Excalidraw npm package (SVG fallback), Supabase, Gemini 2.5 Flash, Zod, mathjs, Tailwind, shadcn/ui, Web Speech API, **Vapi** (Stretch), Vercel.
+- **Differentiation:** one deployed product with Excalidraw board teaching, quiz, saved evidence, and (Stretch) Vapi voice + Teach-the-AI — chat is only for mid-lesson board questions.
 
 
 
 ## 2. Problem and Impact
 
-Most “AI tutors” are chatbots: they dump text, mark answers wrong, and rarely teach like a human teacher — on a board, out loud, with interruption, practice, teach-back, and oral pressure.
+Many AI tutoring products are chat-first: they return text answers and marks, without a board, spoken steps, interruption, teach-back, or a durable lesson record.
 
 Students preparing for coursework and vivas need:
 
@@ -44,16 +44,16 @@ The **first shipped pack** is `binomial_square` so diagnosis, visuals, and gradi
 ## 4. Product Differentiation
 
 - **Live AI whiteboard teaching (Core):** Excalidraw draws step-by-step while voice + captions narrate in EN/UR — this is the main lesson, not a side chat.
-- **Live voice agents on deploy (Stretch):** **Vapi** (conversational voice agent) and/or **LiveKit** (real-time A/V room) on the **same public URL** — teaching voice + viva dialogue, not browser-TTS-only. That is the anti-basic differentiator.
-- **Teacher workflow, not chatbot:** board + voice agent + quiz + summary + Teach-the-AI + viva; chat only for mid-lesson questions.
+- **Vapi voice agent (Stretch):** one chosen provider — **Vapi** — on the same public URL for conversational teaching narration and viva. LiveKit is Roadmap (multi-party rooms), not Stretch.
+- **Teacher workflow:** board + voice + quiz + summary; Stretch adds Teach-the-AI and viva; chat only for mid-lesson questions.
 - **Misconception diagnosis (pack):** ≤2 probes; honest outcomes; never force a named gap.
-- **Student agency:** text questions on a selected region in Core; barge-in via voice agent / STT in Stretch.
+- **Student agency:** text questions on a selected region in Core; barge-in via Vapi / STT in Stretch.
 - **Interactive quiz / transfer:** no-hint items; evidence of immediate independent application, not lasting mastery.
 - **Teach-the-AI (Stretch):** AI plays a learner with a deliberate misconception; student must correct it on the board.
-- **Live viva (Stretch):** timed oral exam with Vapi/LiveKit voice agent (mic + optional camera); Gemini/agent rubric scores answers. Web Speech is only the Core/offline fallback.
+- **Live viva (Stretch):** timed oral exam with a **Vapi** voice agent (mic + optional camera); Gemini/agent rubric scores answers. Web Speech is the Core/offline fallback.
 - **Lesson summary (Core lite):** on-screen bullets from validated narration steps — not an invented recap. PDF export is Roadmap.
 - **Bounded AI:** Gemini plans teaching and dialogue; app code grades pack algebra and board-task hits.
-- **Deployed-judge reality:** Excalidraw MCP (if used) is for authoring only. Judges use the public Vercel URL. Core path works with captions + Web Speech if voice agents are down; Stretch demo shows Vapi/LiveKit when shipped.
+- **Deployed-judge reality:** Excalidraw MCP (if used) is for authoring only. Judges use the public Vercel URL. Core path works with captions + Web Speech if Vapi is down; Stretch demo shows Vapi when shipped.
 
 
 
@@ -75,9 +75,9 @@ The **first shipped pack** is `binomial_square` so diagnosis, visuals, and gradi
 
 ### Stretch journeys (after Core) — on the same deployed URL
 
-1. **Voice-agent teaching:** after Core board loop works, wire **Vapi and/or LiveKit** so Play explanation uses a live voice agent synced to board steps (not only `speechSynthesis`). Captions still always on.
+1. **Voice-agent teaching:** after Core board loop works, wire **Vapi** so Play explanation uses a live voice agent synced to board steps (not only `speechSynthesis`). Captions still always on.
 2. **Teach-the-AI:** AI states a deliberate misconception on the board; student explains/corrects; session stores planted misconception, student explanation, and pass/fail rubric.
-3. **Live viva (voice agent):** student joins a short viva session via **Vapi and/or LiveKit** (mic + optional camera). Agent asks timed oral questions; answers transcribed/scored with rubric; results saved.
+3. **Live viva (Vapi):** student joins a short viva session via **Vapi** (mic + optional camera). Agent asks timed oral questions; answers transcribed/scored with rubric; results saved.
 4. **Barge-in:** student interrupts the teaching agent mid-step, asks aloud, teaching pauses and resumes after the answer.
 
 
@@ -93,7 +93,7 @@ The **first shipped pack** is `binomial_square` so diagnosis, visuals, and gradi
 - Versioned `binomial_square` pack with misconception catalog.
 - Honest Detective outcomes (pack mode).
 - **Live AI topic/pack explanation on Excalidraw** with validated operations; React/SVG fallback if Excalidraw blocks the deadline.
-- Narrated teaching: ordered `{operation, spoken line}` steps, **browser Web Speech TTS as Core voice**, always-on captions, play/pause/replay, EN/UR. (Stretch upgrades voice to Vapi/LiveKit on the same URL.)
+- Narrated teaching: ordered `{operation, spoken line}` steps, **browser Web Speech TTS as Core voice**, always-on captions, play/pause/replay, EN/UR. (Stretch upgrades voice to **Vapi** on the same URL.)
 - Mid-lesson **text** Q&A on a selected element.
 - Constrained `2bx` board task (pack), app-graded.
 - Interactive quiz (2–3 items) including transfer-style check; two-part algebra grading for pack items.
@@ -105,28 +105,24 @@ The **first shipped pack** is `binomial_square` so diagnosis, visuals, and gradi
 
 
 
-### Stretch — wow layer on the deployed URL (after Core is green)
+### Stretch — after Core is green (same deployed URL)
 
-- **Live voice agents (required Stretch target):** integrate **Vapi and/or LiveKit** on the public deploy so teaching narration and viva are real conversational voice agents — not browser-TTS-only. Prefer shipping **at least one** (Vapi for agent dialogue *or* LiveKit for A/V room); both if time.
-- **Voice-agent teaching:** board steps stay Gemini/app-validated; agent speaks the spoken lines and handles interrupt/barge-in.
-- **Live viva:** timed oral exam through the voice agent (mic + optional camera); rubric scores saved.
+- **Vapi voice agent (chosen Stretch provider):** integrate **Vapi** on the public deploy for conversational teaching narration and viva. Rationale: one voice-agent API for speak + listen + barge-in; **LiveKit** deferred to Roadmap to keep focus.
+- **Voice-agent teaching:** board steps stay Gemini/app-validated; Vapi speaks the spoken lines and handles interrupt/barge-in.
+- **Live viva:** timed oral exam through Vapi (mic + optional camera); rubric scores saved.
 - **Teach-the-AI:** deliberate misconception; student teaches back on the board; rubric stored.
-- **Fallback rule:** if Vapi/LiveKit keys or browser permissions fail, Core Web Speech + captions + text Q&A still complete M1–M6. Never hard-gate the judge path on voice infra.
-
-
+- **Fallback rule:** if Vapi keys or browser permissions fail, Core Web Speech + captions + text Q&A still complete M1–M6. Never hard-gate the judge path on Vapi.
 
 ### Roadmap
 
 - Full syllabus / PDF upload and multi-lesson plans.
-- Multi-party LiveKit classrooms; multi-agent Vapi routing; richer proctoring UX.
+- **LiveKit** multi-party classrooms / A/V rooms; multi-agent Vapi routing; richer proctoring UX.
 - Short test-prep engine (3–5+ generated drills); adjustable simulations.
 - Pack `round_robin_scheduler`; PDF export of lesson summary; teacher dashboard; learning map.
 
-
-
 ### Out of scope for the event
 
-Unlimited open-domain tutoring with unverified diagrams, custom model training, real-time multiplayer classes, automated high-stakes exam certification, requiring MCP **or** requiring Vapi/LiveKit for the **Core** judge path (Stretch may require them for the wow demo).
+Unlimited open-domain tutoring with unverified diagrams, custom model training, real-time multiplayer classes, automated high-stakes exam certification, requiring MCP **or** requiring Vapi for the **Core** judge path (Stretch may use Vapi for the voice demo).
 
 ### Whiteboard fallback
 
@@ -141,7 +137,7 @@ Gemini 2.5 Flash makes **live hosted calls** in the main journey (M1) — not AI
 - **Quiz Coach:** explains grades after app scoring.
 - **Lesson summary:** app assembles bullets from saved narration + outcomes; optional one Gemini polish; no invented facts.
 - **Teach-the-AI agent (Stretch):** plants one reviewed misconception; follows a teach-back rubric.
-- **Viva / voice agent (Stretch):** Vapi and/or LiveKit agent asks oral questions; scores transcripts with a rubric and confidence; never silently invents a pass.
+- **Viva / voice agent (Stretch):** Vapi agent asks oral questions; scores transcripts with a rubric and confidence; never silently invents a pass.
 
 Zod validates all model JSON. Board ops: add text, add shape, update label, highlight, clear highlight. Spoken lines and STT transcripts are untrusted plain text — never HTML. Model cannot change grades, auth, or RLS.
 
@@ -149,7 +145,7 @@ Narration: one Board Tutor call per Play (no extra Gemini per spoken line). Pack
 
 ## 8. Judge Test Path
 
-Judges use the **public deployed URL**. No Devmarketplace MCP required. Teach-the-AI, Vapi/LiveKit voice agents, and live viva are Stretch demos — not required to pass M1–M6, but they are the wow layer on that same URL.
+Judges use the **public deployed URL**. No Devmarketplace MCP required. Teach-the-AI, Vapi voice agent, and live viva are Stretch demos — not required to pass M1–M6.
 
 1. Fresh account + TOTP 2FA.
 2. Start **Binomial Squares** pack.
@@ -163,7 +159,7 @@ Judges use the **public deployed URL**. No Devmarketplace MCP required. Teach-th
 10. Sign out / sign in; history and summary remain.
 11. Second account cannot access the session.
 
-**If Stretch is shipped:** after Core, show **Vapi/LiveKit voice-agent teaching and/or live viva**, plus Teach-the-AI. Muted audio / agent down → captions + Web Speech fallback still completes Core.
+**If Stretch is shipped:** after Core, show **Vapi** voice-agent teaching and/or live viva, plus Teach-the-AI. Muted audio / Vapi down → captions + Web Speech fallback still completes Core.
 
 ## 9. Data Model
 
@@ -177,11 +173,11 @@ Judges use the **public deployed URL**. No Devmarketplace MCP required. Teach-th
 - **QuizResult:** session, item seed, answer, completion/correctness, explanation.
 - **LessonSummary:** session, bullet list, language, created time.
 - **TeachAiRun (Stretch):** session, planted misconception ID, student explanation, rubric score, pass/fail.
-- **VivaRun (Stretch):** session, questions JSON, transcripts, rubric scores, provider (`vapi` | `livekit` | `webspeech_fallback`), room/call IDs, optional camera-used flag.
-- **VoiceAgentSession (Stretch):** session, provider, external call/room ID, mode (`teach` | `viva`), status, times.
+- **VivaRun (Stretch):** session, questions JSON, transcripts, rubric scores, provider (`vapi` | `webspeech_fallback`), Vapi call ID, optional camera-used flag.
+- **VoiceAgentSession (Stretch):** session, provider (`vapi`), external call ID, mode (`teach` | `viva`), status, times.
 - **ActivityEvent:** user, session, event type, object ID, time.
 
-Stretch may add `SpeechTurn` (transcript, barge-in flag). Roadmap adds multi-party room metadata, `SyllabusDocument`, PDF export of `LessonSummary`.
+Stretch may add `SpeechTurn` (transcript, barge-in flag). Roadmap adds LiveKit room metadata, `SyllabusDocument`, PDF export of `LessonSummary`.
 
 Supabase Auth for identity; RLS + server-side checks on every user-owned row.
 
@@ -190,14 +186,14 @@ Supabase Auth for identity; RLS + server-side checks on every user-owned row.
 - **App:** Next.js + TypeScript; Tailwind + shadcn/ui.
 - **Live board runtime:** `@excalidraw/excalidraw` client-only (`ssr: false`). Optional Excalidraw MCP only while coding — **judges see the live npm board on Vercel**. SVG fallback (Section 6).
 - **TTS (Core fallback):** `speechSynthesis` (`en-US`, `ur-PK`); Play requires user gesture; cancel on navigate/language change/barge-in.
-- **Live voice agents (Stretch, on deployed URL):** **Vapi** for conversational teaching/viva agents and/or **LiveKit** for real-time A/V rooms. Board ops stay app-validated; agent speaks and listens. Secrets server-side; disclose in `AI_DISCLOSURE.md`.
-- **STT / barge-in (Stretch):** via Vapi/LiveKit transcripts primarily; Web Speech Recognition as fallback.
+- **Vapi voice agent (Stretch, on deployed URL):** **Vapi** for conversational teaching and viva. Board ops stay app-validated; agent speaks and listens. Secrets server-side; disclose in `AI_DISCLOSURE.md`. LiveKit is Roadmap only.
+- **STT / barge-in (Stretch):** via Vapi transcripts primarily; Web Speech Recognition as fallback.
 - **Lesson summary:** server builds from stored fields; optional Zod-validated Gemini polish.
 - **Data:** Supabase Auth (TOTP), Postgres, Storage, RLS.
 - **AI:** Gemini 2.5 Flash + Zod structured output.
 - **Grading:** mathjs + app completion/coefficient checks; board-task by element IDs.
 - **Deploy:** Vercel + Supabase. Deploy by end of Day 2 and keep live; keep Gemini credits active until winners are announced.
-- **Tests:** algebra fixtures; schema tests; Judge Test Path + isolation E2E; Stretch: Vapi/LiveKit smoke + Teach-the-AI / viva; fallback path when agent unavailable.
+- **Tests:** algebra fixtures; schema tests; Judge Test Path + isolation E2E; Stretch: Vapi smoke + Teach-the-AI / viva; fallback path when Vapi unavailable.
 - **Interface:** no placeholder/broken Core screens.
 
 Urdu: `dir="rtl"` + Urdu-capable font; equations LTR. Optional cloud TTS for Urdu only if browser voices fail → `AI_DISCLOSURE.md`.
@@ -208,10 +204,10 @@ Urdu: `dir="rtl"` + Urdu-capable font; equations LTR. Optional cloud TTS for Urd
 - Treat topic briefs, board labels, spoken lines, and STT transcripts as untrusted.
 - TOTP, RLS, ownership checks, timeouts, input limits.
 - ≤2 diagnostic probes and ≤8 Gemini calls per Core session; Stretch viva/teach-ai/voice-agent under separate per-session caps.
-- Narration/agent interruptible; Vapi/LiveKit or speech failure must not block board, quiz, or summary (fall back to captions / Web Speech).
-- Camera/mic permissions for Stretch voice-agent teach/viva; Core works without them.
+- Narration/agent interruptible; Vapi or speech failure must not block board, quiz, or summary (fall back to captions / Web Speech).
+- Camera/mic permissions for Stretch Vapi teach/viva; Core works without them.
 - Never draw/speak unvalidated steps; never present hardcoded output as a live model call.
-- Keep Gemini, Vapi, and/or LiveKit keys working until winners are announced.
+- Keep Gemini and Vapi keys working until winners are announced.
 
 
 
@@ -228,24 +224,24 @@ Urdu: `dir="rtl"` + Urdu-capable font; equations LTR. Optional cloud TTS for Urd
 | **M6** | Two in-event code gigs published mid-build with setup + credits                                  |
 
 
-**Vapi/LiveKit voice agents**, Teach-the-AI, and live viva deepen **AI integration / demo scores** after Core passes; they are not substitutes for M1–M6 — but they are how the deployed product stops looking “basic.”
+**Vapi**, Teach-the-AI, and live viva are Stretch additions after Core passes; they are not substitutes for M1–M6.
 
-Core succeeds when a judge sees **live AI whiteboard teaching**, finishes quiz + summary, and recovers data after re-login — even if Vapi/LiveKit are unavailable (Web Speech + captions fallback). Stretch succeeds when the **same URL** runs a real voice-agent teach and/or viva session.
+Core succeeds when a judge sees **live AI whiteboard teaching**, finishes quiz + summary, and recovers data after re-login — even if Vapi is unavailable (Web Speech + captions fallback). Stretch succeeds when the **same URL** runs a Vapi teach and/or viva session.
 
 ## 13. Four-Day Build Plan
 
 - **Day 1:** Auth/TOTP, schema, RLS, lesson shell, grading fixtures. Kickoff checkpoint in Devmarketplace workspace.
 - **Day 2:** Detective, Board Tutor JSON, **live Excalidraw/SVG teach loop**, persistence, **first Vercel deploy (keep live)**, Judge path green, gig #1.
-- **Day 3:** Narration polish, text Q&A, `2bx` task, quiz, lesson summary, history, isolation, gig #2. If Core is green: start **Vapi and/or LiveKit** voice-agent teach + viva; Teach-the-AI if time.
-- **Day 4:** Device/browser tests; Urdu + agent fallback; Stretch polish; docs; ≤3 min demo (Core + voice-agent wow if live); Devpost by 11:00 PM PKT.
+- **Day 3:** Narration polish, text Q&A, `2bx` task, quiz, lesson summary, history, isolation, gig #2. If Core is green: start **Vapi** voice-agent teach + viva; Teach-the-AI if time.
+- **Day 4:** Device/browser tests; Urdu + Vapi fallback; Stretch polish; docs; ≤3 min demo (Core + Vapi if live); Devpost by 11:00 PM PKT.
 
 Commit throughout; stop at code freeze. No product code before 9:00 AM PKT on 19 October 2026.
 
 ## 14. Team Readiness
 
-- **Muhammad Taha Farrukh — AI Orchestration and Backend:** APIs, Gemini roles, **Vapi/LiveKit voice-agent** wiring, Teach-the-AI / Viva orchestration.
-- **Muhammad Uzzam Siddiqui — Excalidraw UX and Errors:** live board UI, selection, RTL/LTR, narration sync with voice agent, Teach-the-AI/viva UI.
-- **Uzair Ahmed — Auth, Data, Integration and Deployment:** TOTP, RLS, persistence, E2E, Vercel/Supabase; mic/camera + Vapi/LiveKit secrets and webhooks.
+- **Muhammad Taha Farrukh — AI Orchestration and Backend:** APIs, Gemini roles, **Vapi** voice-agent wiring, Teach-the-AI / Viva orchestration.
+- **Muhammad Uzzam Siddiqui — Excalidraw UX and Errors:** live board UI, selection, RTL/LTR, narration sync with Vapi, Teach-the-AI/viva UI.
+- **Uzair Ahmed — Auth, Data, Integration and Deployment:** TOTP, RLS, persistence, E2E, Vercel/Supabase; mic/camera + Vapi secrets and webhooks.
 - **Muhammad Saad — Curriculum, QA and Docs:** pack catalog, planted misconceptions, viva rubrics, Urdu review, gigs, demo narrative.
 
 Daily integration. Reuse Next.js, Supabase, Excalidraw, mathjs, shadcn/ui, official SDKs; evaluate Devmarketplace gigs at kickoff.
@@ -259,14 +255,14 @@ Publish mid-event with setup instructions and teammate credits.
 
 ## 16. Prior Work and AI Disclosure
 
-Ideas may be pre-existing; product code may not. All product code starts after 9:00 AM PKT on 19 October 2026. Bring `PRIOR_WORK.md` if anything pre-existing is reused. Disclose in `AI_DISCLOSURE.md`: Gemini, Web Speech TTS/STT, **Vapi and/or LiveKit**, any cloud TTS, coding assistants, Excalidraw and other OSS with licences. Do not misrepresent hardcoded output as live model calls.
+Ideas may be pre-existing; product code may not. All product code starts after 9:00 AM PKT on 19 October 2026. Bring `PRIOR_WORK.md` if anything pre-existing is reused. Disclose in `AI_DISCLOSURE.md`: Gemini, Web Speech TTS/STT, **Vapi**, any cloud TTS, LiveKit if later used, coding assistants, Excalidraw and other OSS with licences. Do not misrepresent hardcoded output as live model calls.
 
 ## 17. Final Demo
 
 ≤3 minutes on the **deployed** app: 2FA → wrong answer → diagnosis → **live AI Excalidraw teaching** → text question → `2bx` task → quiz → lesson summary → re-login.
 
-If Stretch is live (target): same URL → **Vapi/LiveKit voice-agent teach and/or viva** (+ Teach-the-AI if ready). Never fake features; never require MCP for the judge; never leave Core broken if the agent is down.
+If Stretch is live (target): same URL → **Vapi** teach and/or viva (+ Teach-the-AI if ready). Never fake features; never require MCP for the judge; never leave Core broken if Vapi is down.
 
 ## 18. Summary
 
-Visual AI Tutor teaches **live on a whiteboard**: Gemini drives Excalidraw steps while voice narrates, then quiz and summary lock the learning record. Core wins M1–M6 with Web Speech + captions if needed. **Stretch puts Vapi and/or LiveKit live voice agents on the same deployed URL** for teaching and viva — that is the non-basic, award-level layer — plus Teach-the-AI. Multi-party classrooms and full syllabus stay on the roadmap.
+Visual AI Tutor teaches **live on a whiteboard**: Gemini drives Excalidraw steps while voice narrates, then quiz and summary lock the learning record. Core meets M1–M6 with Web Speech + captions if needed. Stretch adds **Vapi** on the same deployed URL for teaching and viva, plus Teach-the-AI. LiveKit multi-party rooms and full syllabus stay on the roadmap.
