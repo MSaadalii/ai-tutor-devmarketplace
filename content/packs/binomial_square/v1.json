@@ -4,8 +4,84 @@
   "title": "Binomial Squares",
   "examplePrompt": "(x+3)^2",
   "commonWrong": "x^2+9",
-  "misconceptions": [],
-  "quiz": [],
-  "boardTaskElementIds": [],
-  "notes": "Saad lane: expand catalog, probes, quiz, 2bx IDs, Urdu seeds."
+  "language": "en",
+  "areaModel": {
+    "aLabel": "x",
+    "bLabel": "3",
+    "regionIds": {
+      "a2": "region_a2",
+      "ab1": "region_ab_1",
+      "ab2": "region_ab_2",
+      "b2": "region_b2"
+    }
+  },
+  "misconceptions": [
+    {
+      "id": "missing_middle_term",
+      "label": "Forgot the 2ab middle term",
+      "probes": [
+        "What do you get when you write (x+3)(x+3) before simplifying?",
+        "In (a+b)^2, why is there a 2ab term?"
+      ]
+    },
+    {
+      "id": "distribution_slip",
+      "label": "Distribution or sign slip",
+      "probes": [
+        "Can you multiply x+3 by x, then by 3, and add the results?",
+        "What sign does each partial product carry?"
+      ]
+    },
+    {
+      "id": "power_rule_misuse",
+      "label": "Applied (a+b)^n = a^n + b^n",
+      "probes": [
+        "Does the power apply to every term inside the bracket separately?",
+        "Check (1+1)^2. Is it equal to 1^2 + 1^2?"
+      ]
+    }
+  ],
+  "boardTaskElementIds": ["region_ab_1", "region_ab_2"],
+  "quiz": [
+    {
+      "seed": "basic_check",
+      "prompt": "Expand (x+3)^2.",
+      "urduPrompt": "(x+3)^2 کو پھیلائیں۔",
+      "expected": "x^2+6*x+9",
+      "type": "input"
+    },
+    {
+      "seed": "transfer_1",
+      "prompt": "Expand (x+5)^2.",
+      "urduPrompt": "(x+5)^2 کو پھیلائیں۔",
+      "expected": "x^2+10*x+25",
+      "type": "input"
+    },
+    {
+      "seed": "transfer_2",
+      "prompt": "Expand (2x+1)^2.",
+      "urduPrompt": "(2x+1)^2 کو پھیلائیں۔",
+      "expected": "4*x^2+4*x+1",
+      "type": "input"
+    }
+  ],
+  "narrationSeeds": {
+    "en": [
+      "Start with a square of side x plus 3.",
+      "The big square has area x squared.",
+      "Each rectangle has area three x.",
+      "Together the two rectangles make six x.",
+      "The small square has area nine.",
+      "So x plus three all squared equals x squared plus six x plus nine."
+    ],
+    "ur": [
+      "ایک مربع لیں جس کی طرف x plus 3 ہو۔",
+      "بڑے مربع کا رقبہ x squared ہے۔",
+      "ہر مستطیل کا رقبہ 3x ہے۔",
+      "دونوں مستطیلوں کا مجموعہ 6x بنتا ہے۔",
+      "چھوٹے مربع کا رقبہ 9 ہے۔",
+      "لہٰذا (x+3)^2 برابر ہے x^2 + 6x + 9 کے۔"
+    ]
+  },
+  "notes": "Binomial square pack for the Judge Test Path. Area-model board task graded by template element IDs; algebra graded by mathjs."
 }

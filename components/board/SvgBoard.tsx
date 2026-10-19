@@ -1,0 +1,155 @@
+"use client";
+
+import type { BoardScene, BoardElement } from "@/lib/board/ops";
+import type { AppLanguage } from "@/types";
+
+export type SvgBoardProps = {
+  scene: BoardScene;
+  language?: AppLanguage;
+  onElementClick?: (elementId: string) => void;
+  taskMode?: boolean;
+  selectedElementIds?: string[];
+  currentStepIndex?: number;
+  caption?: string;
+};
+
+const VIEWBOX_WIDTH = 400;
+const VIEWBOX_HEIGHT = 420;
+
+export function SvgBoard({
+  scene,
+  language = "en",
+  onElementClick,
+  taskMode = false,
+  selectedElementIds = [],
+  currentStepIndex = -1,
+  caption,
+}: SvgBoardProps) {
+  const clickableIds = new Set(
+    taskMode
+      ? ["region_ab_1", "region_ab_2", "region_a2", "region_b2"]
+      : scene.elements.map((e) => e.id),
+  );
+
+  return (
+    <div className="relative w-full">
+      <svg
+        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+        className="h-auto w-full rounded-lg border border-stone-200 bg-white"
+        dir={language === "ur" ? "rtl" : "ltr"}
+        role="img"
+        aria-label="Area model whiteboard"
+      >
+        {scene.elements.map((el) => (
+          <SvgElement
+            key={el.id}
+            element={el}
+            language={language}
+            clickable={clickableIds.has(el.id)}
+            selected={selectedElementIds.includes(el.id)}
+            onClick={() => onElementClick?.(el.id)}
+          />
+        ))}
+
+        {currentStepIndex >= 0 && (
+          <text
+            x={VIEWBOX_WIDTH - 12}
+            y={24}
+            textAnchor="end"
+            className="fill-stone-400 text-xs"
+            style={{ fontSize: 12 }}
+          >
+            Step {currentStepIndex + 1}
+          </text>
+        )}
+      </svg>
+
+      {taskMode && (
+        <div className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs text-stone-600 shadow">
+          Tap the two regions that make 6x
+        </div>
+      )}
+
+      {caption ? (
+        <div
+          className="mt-2 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-800"
+          dir={language === "ur" ? "rtl" : "ltr"}
+        >
+          {caption}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SvgElement({
+  element,
+  language,
+  clickable,
+  selected,
+  onClick,
+}: {
+  element: BoardElement;
+  language: AppLanguage;
+  clickable: boolean;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const isText = element.type === "text";
+  const cursor = clickable ? "pointer" : "default";
+  const stroke = selected ? "#0f766e" : element.strokeColor ?? "#1c1917";
+  const fill = selected
+    ? "#ccfbf1"
+    : element.backgroundColor ?? "transparent";
+
+  if (isText) {
+    return (
+      <text
+        x={element.x}
+        y={element.y + (element.fontSize ?? 20)}
+        className="select-none"
+        style={{
+          fontSize: element.fontSize ?? 20,
+          fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui",
+          fill: "#1c1917",
+          direction: language === "ur" ? "rtl" : "ltr",
+        }}
+        onClick={onClick}
+        cursor={cursor}
+      >
+        {element.text}
+      </text>
+    );
+  }
+
+  return (
+    <g onClick={onClick} cursor={cursor}>
+      <rect
+        x={element.x}
+        y={element.y}
+        width={element.width}
+        height={element.height}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={selected ? 3 : element.strokeWidth ?? 2}
+        rx={4}
+      />
+      {element.text ? (
+        <text
+          x={element.x + element.width / 2}
+          y={element.y + element.height / 2 + 6}
+          textAnchor="middle"
+          className="select-none"
+          style={{
+            fontSize: element.fontSize ?? 20,
+            fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui",
+            fill: "#1c1917",
+            direction: "ltr",
+          }}
+        >
+          {element.text}
+        </text>
+      ) : null}
+    </g>
+  );
+}

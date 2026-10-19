@@ -10,6 +10,7 @@ STEM tutor: topic/pack in → Gemini returns validated Excalidraw board JSON →
 
 | File | Role |
 |------|------|
+| `CONTEXT.md` | **Read first in every new chat; update before every push** |
 | `SPEC.md` | Product scope: Core vs Stretch vs Roadmap |
 | `PRIOR_WORK.md` | Pre-build decisions (Excalidraw setup plan, no pre-start product code) |
 | `TECH.md` | Locked stack, fallbacks, why each tool |
