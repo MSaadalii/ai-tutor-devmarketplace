@@ -1,10 +1,10 @@
 import {
   boardTutorResponseSchema,
   boardAnswerResponseSchema,
-  type NarrationStep,
 } from "@/lib/ai/schemas";
 import { callGeminiJson, type GeminiRole } from "@/lib/ai/gemini";
 import { getPack } from "@/lib/packs/binomial_square";
+import type { NarrationStep } from "@/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type BoardTutorMode = "teach" | "answer";

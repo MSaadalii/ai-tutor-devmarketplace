@@ -8,9 +8,9 @@ export type SvgBoardProps = {
   language?: AppLanguage;
   onElementClick?: (elementId: string) => void;
   taskMode?: boolean;
+  taskElementIds?: string[];
   selectedElementIds?: string[];
   currentStepIndex?: number;
-  caption?: string;
 };
 
 const VIEWBOX_WIDTH = 400;
@@ -21,13 +21,15 @@ export function SvgBoard({
   language = "en",
   onElementClick,
   taskMode = false,
+  taskElementIds = [],
   selectedElementIds = [],
   currentStepIndex = -1,
-  caption,
 }: SvgBoardProps) {
   const clickableIds = new Set(
     taskMode
-      ? ["region_ab_1", "region_ab_2", "region_a2", "region_b2"]
+      ? taskElementIds.length > 0
+        ? taskElementIds
+        : ["region_ab_1", "region_ab_2", "region_a2", "region_b2"]
       : scene.elements.map((e) => e.id),
   );
 
@@ -69,15 +71,6 @@ export function SvgBoard({
           Tap the two regions that make 6x
         </div>
       )}
-
-      {caption ? (
-        <div
-          className="mt-2 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-800"
-          dir={language === "ur" ? "rtl" : "ltr"}
-        >
-          {caption}
-        </div>
-      ) : null}
     </div>
   );
 }

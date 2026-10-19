@@ -1,10 +1,18 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import type { BoardOperation, NarrationStep, AppLanguage } from "@/types";
+import type { NarrationStep, AppLanguage } from "@/types";
 import { buildSceneFromSteps } from "@/lib/board/ops";
 import { SvgBoard } from "./SvgBoard";
-import { ExcalidrawBoard } from "./ExcalidrawBoard";
+import { BoardErrorBoundary } from "./BoardErrorBoundary";
+import type { ExcalidrawBoardProps } from "./ExcalidrawBoard";
+
+const ExcalidrawBoard = dynamic<ExcalidrawBoardProps>(
+  () => import("./ExcalidrawBoard").then((mod) => mod.ExcalidrawBoard),
+  { ssr: false },
+);
 
 export type BoardCanvasProps = {
   steps?: NarrationStep[];
@@ -31,14 +39,17 @@ export function BoardCanvas({
   taskElementIds = [],
   taskMode = false,
   language = "en",
-  fallback = "svg",
+  fallback = "excalidraw",
   children,
 }: BoardCanvasProps) {
-  const scene = buildSceneFromSteps(steps, currentStepIndex);
+  const [excalidrawFailed, setExcalidrawFailed] = useState(false);
+  const scene = useMemo(
+    () => buildSceneFromSteps(steps, currentStepIndex),
+    [steps, currentStepIndex],
+  );
 
-  // Always show the area-model base scene, even when no steps have played.
   const hasSteps = steps.length > 0;
-  const currentStep = steps[currentStepIndex];
+  const useSvg = fallback === "svg" || excalidrawFailed;
 
   const commonProps = {
     scene,
@@ -47,17 +58,21 @@ export function BoardCanvas({
     taskMode,
     selectedElementIds,
     currentStepIndex,
-    caption: currentStep?.spokenLine,
   };
 
   return (
     <div className="space-y-3">
       {children}
 
-      {fallback === "excalidraw" ? (
-        <ExcalidrawBoard {...commonProps} />
+      {useSvg ? (
+        <SvgBoard {...commonProps} taskElementIds={taskElementIds} />
       ) : (
-        <SvgBoard {...commonProps} />
+        <BoardErrorBoundary onError={() => setExcalidrawFailed(true)}>
+          <ExcalidrawBoard
+            {...commonProps}
+            onError={() => setExcalidrawFailed(true)}
+          />
+        </BoardErrorBoundary>
       )}
 
       {!hasSteps && !taskMode && (
@@ -65,18 +80,6 @@ export function BoardCanvas({
           Board ready — press Play explanation to see the live steps.
         </p>
       )}
-
-      {currentStep && !currentStep.spokenLine ? (
-        <div className="rounded-md bg-stone-100 px-3 py-2 text-xs text-stone-600">
-          Op: <code>{currentStep.operation.type}</code> · Region:{" "}
-          <code>{formatElementId(currentStep.operation)}</code>
-        </div>
-      ) : null}
     </div>
   );
-}
-
-function formatElementId(op: BoardOperation): string {
-  const p = op.payload as Record<string, unknown>;
-  return String(p.elementId ?? p.id ?? "—");
 }

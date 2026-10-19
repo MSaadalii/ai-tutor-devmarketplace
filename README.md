@@ -1,75 +1,43 @@
 # Visual AI Tutor
 
-Live whiteboard tutor for STEM students: Gemini returns validated Excalidraw board JSON → draw + captions/TTS → board Q&A → quiz → lesson summary → Supabase Auth + TOTP.
-
-Product spec: [`SPEC.md`](./SPEC.md) · Agent rules: [`AGENTS.md`](./AGENTS.md) · Stack: [`TECH.md`](./TECH.md) · Prior work: [`PRIOR_WORK.md`](./PRIOR_WORK.md)
+Live whiteboard tutor for STEM students: Gemini returns validated board steps, the lesson draws them with captions and optional Web Speech narration, then continues through board Q&A, the 2bx task, quiz, and summary.
 
 ## Status
 
-**Phase 1 — Auth + TOTP 2FA (Uzair) done:** Supabase email/password sign up/in, mandatory TOTP enrollment + challenge, protected routes, and the Core Postgres schema (sessions, attempts, board state, narration, quiz, summary) with per-account RLS.
+Core Phase 3 is complete: the lesson has client-only Excalidraw, an SVG area-model fallback, shared board operation replay, Play/Pause/Replay controls, always-on captions, and speech cancellation on pause/navigation. The next lane is Judge path E2E (diagnose → board → 2bx → quiz → summary) plus deploy.
 
-**Phase 2 — Gemini APIs + grading (Taha) done:**
-- Zod-validated Gemini 2.5 Flash calls for Detective (≤2 probes, honest outcomes), Board Tutor (≤6 steps, spokenLine ≤160 chars), and Quiz Coach.
-- mathjs-based completion/correctness grading for binomial expansion; re-entering `(x+3)^2` fails completion.
-- 2bx board-task graded by template element IDs in app code.
-- Web Speech API narration with always-on captions; optional Uplift AI Urdu TTS when configured.
-- Full `binomial_square` pack with misconception catalog, probes, quiz items, and narration seeds.
-- API routes: `/api/diagnose`, `/api/board-tutor`, `/api/board-task`, `/api/quiz`, `/api/summary`.
-- Lesson orchestration page flows through diagnosis → board play → text question → 2bx task → quiz → summary.
-
-Phase 3 (Uzzam) will replace the board placeholder with the live Excalidraw/SVG renderer.
-
-## Stack
-
-Next.js (App Router) · TypeScript · Tailwind · Supabase · Gemini 2.5 Flash · Zod · mathjs · Excalidraw (next) · Vercel
-
-## Local setup
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Without secrets the app renders a clear "Supabase is not configured" notice instead of crashing.
+Open http://localhost:3000. Use `npm run build` to verify a production build.
 
-### Secrets
+## Configuration
 
-Add every name from [`.env.example`](./.env.example) in the workspace **Secrets** panel (the preview injects them as environment variables). For local dev, copy `.env.example` to `.env.local` and fill it in — never commit it.
+Add the names from `.env.example` in the workspace Secrets panel. Supabase and Gemini configuration errors are surfaced in the UI/API rather than silently producing a blank lesson. Do not commit secrets or a `.env` file.
 
-### Supabase setup (auth + data)
+For the Supabase demo, enable email/password auth. If email confirmation is enabled, confirm the inbox message before signing in. TOTP enrollment/challenge is required before `/app` and `/lesson/*`.
 
-1. Create a Supabase project; copy the URL and anon key into secrets.
-2. Apply the schema: Supabase Dashboard → **SQL Editor** → run [`supabase/migrations/0001_core_schema.sql`](./supabase/migrations/0001_core_schema.sql) (creates Core tables + RLS owner-only policies).
-3. Auth settings (Dashboard → Authentication):
-   - Email/password provider enabled.
-   - For the hackathon demo, turn **Confirm email off** so sign-up goes straight to TOTP enrollment (if left on, users confirm email first and enroll 2FA at first sign-in — the app handles both).
-   - TOTP (MFA) is built in — no extra config.
+## Demo click path
 
-### Auth flow
+1. Open **Start lesson** on `/` and create an account, or use **Sign in**.
+2. Complete the authenticator setup/code at `/verify-2fa`.
+3. On `/app`, choose **Binomial Squares → Start**.
+4. On the lesson page, submit a diagnostic answer, then press **Play explanation**. Captions remain visible while Excalidraw draws; use **Use SVG fallback** if needed.
+5. Ask a board question, select the two `3x` regions, complete the quiz, and show the summary.
 
-- **Sign up** (`/signup`) → password session (AAL1) → **TOTP enrollment** (`/verify-2fa`, QR + manual secret) → app at AAL2.
-- **Sign in** (`/login`) → password → **TOTP challenge** (`/verify-2fa`) → app.
-- Middleware guards `/app` and `/lesson/*`: no session → `/login`; session without AAL2 → `/verify-2fa`.
-- Data persistence/isolation: every Core table carries `user_id` with RLS `auth.uid() = user_id` policies — sign out/in restores sessions, and a second account cannot read them.
+## Key board paths
 
-## Scripts
+- `components/board/BoardCanvas.tsx` — dynamic `ssr: false` wrapper and automatic fallback.
+- `components/board/ExcalidrawBoard.tsx` — runtime client-only Excalidraw loader.
+- `components/board/SvgBoard.tsx` — fallback renderer.
+- `lib/board/ops.ts` — shared `BoardScene` and `applyOperation` implementation.
+- `app/lesson/[id]/LessonClient.tsx` — narration playback and cancellation.
+- `lib/voice/speech.ts` — Web Speech API adapter.
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Local dev |
-| `npm run build` | Production build |
-| `npm run start` | Serve build |
-| `npm run lint` | ESLint |
+## Project docs
 
-## Live URL
-
-_Add Vercel URL here after first deploy (Day 2)._
-
-## Team lanes
-
-| Person | Owns |
-|--------|------|
-| Uzair | Auth, schema, RLS, deploy |
-| Taha | Gemini + Zod APIs, grading |
-| Uzzam | Excalidraw / SVG board |
-| Saad | Pack content, docs, gigs |
+See [`SPEC.md`](./SPEC.md), [`AGENTS.md`](./AGENTS.md), [`TECH.md`](./TECH.md), and [`CONTEXT.md`](./CONTEXT.md).
