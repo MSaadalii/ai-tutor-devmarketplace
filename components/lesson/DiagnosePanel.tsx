@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 export type Diagnosis = {
   outcome: string;
   explanation: string;
-  probes?: { question: string }[];
+  probes?: (string | { question: string })[];
   misconception_id?: string;
 };
+
+/** Renders a probe whether the API sent a plain string or a {question} object. */
+export function probeText(probe: string | { question: string }): string {
+  return typeof probe === "string" ? probe : probe.question;
+}
 
 export function DiagnosePanel({
   problem,
@@ -68,7 +73,7 @@ export function DiagnosePanel({
       {activeProbe ? (
         <div className="mt-4 space-y-3">
           <p className="text-sm font-medium">Follow-up probe</p>
-          <p className="text-sm text-stone-700">{activeProbe.question}</p>
+          <p className="text-sm text-stone-700">{probeText(activeProbe)}</p>
           <input
             type="text"
             value={currentProbeAnswer}

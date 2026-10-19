@@ -3,7 +3,22 @@
 Read this first in every new chat before touching code.
 
 ## Last update
-Phase 1 "Walkable lesson path" lane — Start pack resumes or creates a session and opens `/lesson/[sessionId]`; DiagnosePanel is pre-filled with `x^2 + 9` for `(x+3)^2`; Play calls board-tutor and draws via Excalidraw (SVG on automatic fallback or manual toggle); captions always on; on-screen red notices for API/config errors.
+Phase 2 "Judge E2E" lane — the lesson path (Start → Diagnose → Play board) is fixed for the two known bugs below. **Next work is limited to finishing the Judge E2E path only.** Deploy comes AFTER the path works. Do not add Vapi or Stretch. No secrets in this file.
+
+## Phase 2 fixes (this lane)
+- **Bug A — Play stayed disabled (probe shape):** `lib/ai/schemas.ts` `detectiveProbeSchema` now accepts a string OR `{question}` and coerces a string to `{question}` before validation. `lib/ai/detective.ts` prompt now requires `probes` as `[{"question":"..."}]`. `DiagnosePanel` renders a probe as either shape via `probeText()`; `LessonClient` uses the same helper for `prior_probes` and types the diagnosis with the shared `Diagnosis` type. Play unlocks after a successful diagnose (`activePhase` moves to `board`).
+- **Bug B — Excalidraw export not found:** `components/board/ExcalidrawBoard.tsx` now resolves the component with `resolveExcalidrawExport()`: `mod.Excalidraw`, then `mod.default.Excalidraw`, then `mod.default`. If none is a component, the SVG fallback notice appears as before.
+- Status: static fixes only. `npm install && npm run build` and the click path below have **not been run** in this workspace (no shell tool). Run them first.
+
+## Judge E2E — remaining checks (only these)
+1. Sign in → `/app` → Start on Binomial Squares → `/lesson/<id>`.
+2. Diagnose: submit `x^2 + 9`. If a probe appears, answer it. Confirm Play unlocks and the diagnosis panel shows.
+3. Play explanation: board draws (Excalidraw, or SVG automatically / by toggle), captions show, speech used only when available.
+4. Missing or bad `GEMINI_API_KEY` → red notice on the lesson page, not a blank screen.
+5. Record PASS/FAIL here, then continue to the rest of the judge path (ask → 2bx → quiz → summary).
+
+## Earlier lane: Phase 1 "Walkable lesson path"
+Start pack resumes or creates a session and opens `/lesson/[sessionId]`; DiagnosePanel is pre-filled with `x^2 + 9` for `(x+3)^2`; Play calls board-tutor and draws via Excalidraw (SVG on automatic fallback or manual toggle); captions always on; on-screen red notices for API/config errors.
 
 ## Walkable path status
 - Code changes made in this lane, **not yet executed** in this workspace (no shell tool). Run `npm install && npm run dev` and walk the demo click path before anything else.
@@ -21,6 +36,13 @@ Phase 1 "Walkable lesson path" lane — Start pack resumes or creates a session 
 
 ## Next (after this lane)
 **Finish Judge E2E only**, then deploy AFTER the path works. Do not add Vapi or Stretch.
+
+## DEMO CLICK PATH
+1. Sign in → `/app` → **Start** on Binomial Squares → `/lesson/<id>`.
+2. Diagnose: `x^2 + 9` is pre-filled → **Submit**. Answer any probe. Play unlocks.
+3. **Play explanation** → board draws → captions show → speech only if the browser supports it.
+4. Gemini missing or bad → red notice on the lesson page.
+5. **Use SVG fallback** toggles the renderer.
 
 ## Lane finished
 **Auth / data / deploy hardening.** Phase 3 (board playback) is untouched: no Excalidraw rewrite, no Gemini prompt changes, no pack content changes, no Vapi/Stretch.

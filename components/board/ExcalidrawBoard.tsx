@@ -41,10 +41,8 @@ export function ExcalidrawBoard({
     import("@excalidraw/excalidraw")
       .then((mod) => {
         if (!mounted) return;
-        const Comp =
-          (mod as Record<string, unknown>).Excalidraw ??
-          (mod as { default: ComponentType<unknown> }).default;
-        if (typeof Comp !== "function") {
+        const Comp = resolveExcalidrawExport(mod);
+        if (!Comp) {
           throw new Error("Excalidraw export not found");
         }
         setExcalidrawComponent(() => Comp);
@@ -85,6 +83,25 @@ export function ExcalidrawBoard({
 type ExcalidrawApi = {
   updateScene: (scene: Record<string, unknown>) => void;
 };
+
+function isComponentLike(value: unknown): value is ComponentType<unknown> {
+  if (typeof value === "function") return true;
+  // React.memo / forwardRef exports are objects tagged with $typeof.
+  return typeof value === "object" && value !== null && "$typeof" in value;
+}
+
+/**
+ * Bundler-independent resolution: mod.Excalidraw, then mod.default.Excalidraw,
+ * then mod.default. Returns null when none of them is a component.
+ */
+export function resolveExcalidrawExport(
+  mod: unknown,
+): ComponentType<unknown> | null {
+  const m = (mod ?? {}) as Record<string, unknown>;
+  const def = (m.default ?? {}) as Record<string, unknown>;
+  const candidates: unknown[] = [m.Excalidraw, def.Excalidraw, m.default];
+  return candidates.find(isComponentLike) ?? null;
+}
 
 function ExcalidrawCanvas({
   Component,

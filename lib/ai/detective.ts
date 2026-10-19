@@ -92,7 +92,9 @@ Return JSON with:
 - outcome (one of the five allowed values)
 - misconception_id (only if outcome is misconception_identified; must be one of the catalog IDs)
 - confidence (0.0 to 1.0)
-- probes (array of up to 2 follow-up questions; omit if no probe needed)
+- probes (array of up to 2 follow-up questions, each an object exactly shaped
+  as {"question":"..."}, e.g. [{"question":"What does (x+3)(x+3) give?"}]; never
+  plain strings; omit or use [] if no probe is needed)
 - explanation (short, honest rationale, max 500 chars)
 `;
 }

@@ -36,10 +36,16 @@ export const boardTutorResponseSchema = z.object({
 
 export type BoardTutorResponse = z.infer<typeof boardTutorResponseSchema>;
 
-/** Detective probe: a short follow-up question. */
-export const detectiveProbeSchema = z.object({
-  question: z.string().max(200),
-});
+/**
+ * Detective probe: a short follow-up question. Gemini sometimes returns a bare
+ * string instead of {question}; coerce strings to the canonical object shape.
+ */
+export const detectiveProbeSchema = z.preprocess(
+  (v) => (typeof v === "string" ? { question: v.trim() } : v),
+  z.object({
+    question: z.string().min(1).max(200),
+  }),
+);
 
 /** Detective outcome for the pack path. */
 export const detectiveOutcomeSchema = z.object({

@@ -18,7 +18,7 @@ import {
 } from "@/lib/supabase/client";
 import { speakLine, cancelSpeech, isSpeechSupported } from "@/lib/voice/speech";
 import { getPack, BINOMIAL_SQUARE_ID } from "@/lib/packs/binomial_square";
-import { DiagnosePanel } from "@/components/lesson/DiagnosePanel";
+import { DiagnosePanel, probeText, type Diagnosis } from "@/components/lesson/DiagnosePanel";
 import { QuestionPanel } from "@/components/lesson/QuestionPanel";
 import { BoardTaskPanel } from "@/components/lesson/BoardTaskPanel";
 import { QuizPanel, type QuizResult } from "@/components/lesson/QuizPanel";
@@ -46,12 +46,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<AppLanguage>("en");
 
-  const [diagnosis, setDiagnosis] = useState<{
-    outcome: string;
-    explanation: string;
-    probes?: { question: string }[];
-    misconception_id?: string;
-  } | null>(null);
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [probeAnswers, setProbeAnswers] = useState<string[]>([]);
 
   const [steps, setSteps] = useState<NarrationStep[]>([]);
@@ -182,16 +177,11 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   async function handleDiagnose(answer: string, nextProbeAnswers: string[]) {
     setError(null);
     await guarded(async () => {
-      const data = await postJson<{
-        outcome: string;
-        explanation: string;
-        probes?: { question: string }[];
-        misconception_id?: string;
-      }>("/api/ai/detective", {
+      const data = await postJson<Diagnosis>("/api/ai/detective", {
         session_id: sessionId,
         problem: PROBLEM,
         student_answer: answer,
-        prior_probes: diagnosis?.probes?.map((p) => p.question),
+        prior_probes: diagnosis?.probes?.map(probeText),
         prior_responses: nextProbeAnswers,
         language,
       });
