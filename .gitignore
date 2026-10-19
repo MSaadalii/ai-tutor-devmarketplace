@@ -1,1 +1,8 @@
-TECH.md
+HACKATHON_PROMPTS.md
+BUILD_FLOW.md
+.env
+.env.local
+.env*.local
+node_modules/
+.next/
+.vercel/
