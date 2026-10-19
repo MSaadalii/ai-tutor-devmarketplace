@@ -66,6 +66,27 @@ export default function AppHomePage() {
     setCreating(packId);
     setError(null);
     const supabase = getSupabaseBrowserClient();
+
+    // Resume an unfinished session for this pack instead of creating duplicates.
+    const { data: existing, error: lookupError } = await supabase
+      .from("learning_sessions")
+      .select("*")
+      .eq("pack_id", packId)
+      .eq("status", "in_progress")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lookupError) {
+      setCreating(null);
+      setError(`Could not load your lesson (${lookupError.message}).`);
+      return;
+    }
+    if (existing) {
+      setCreating(null);
+      router.push(`/lesson/${(existing as LearningSessionRow).id}`);
+      return;
+    }
+
     const { data, error: insertError } = await supabase
       .from("learning_sessions")
       .insert({

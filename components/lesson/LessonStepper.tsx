@@ -19,6 +19,7 @@ export function LessonStepper({
       {STEPS.map((label, i) => (
         <li
           key={label}
+          aria-current={i === activeIndex ? "step" : undefined}
           className={cn(
             "rounded-full px-3 py-1 text-xs font-medium",
             i === activeIndex

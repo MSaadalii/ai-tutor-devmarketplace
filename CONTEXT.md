@@ -3,7 +3,24 @@
 Read this first in every new chat before touching code.
 
 ## Last update
-Auth/data/deploy hardening lane (Uzair) — secrets docs, single migration, RLS tightened, clear env errors, build blockers fixed.
+Phase 1 "Walkable lesson path" lane — Start pack resumes or creates a session and opens `/lesson/[sessionId]`; DiagnosePanel is pre-filled with `x^2 + 9` for `(x+3)^2`; Play calls board-tutor and draws via Excalidraw (SVG on automatic fallback or manual toggle); captions always on; on-screen red notices for API/config errors.
+
+## Walkable path status
+- Code changes made in this lane, **not yet executed** in this workspace (no shell tool). Run `npm install && npm run dev` and walk the demo click path before anything else.
+- Fixed: Excalidraw selection read `el.selected` (never set) → now reads `appState.selectedElementIds`; scene elements were `locked: true` (not selectable) → unlocked.
+- Fixed: Excalidraw load failure now shows a notice and switches to SVG; the manual toggle back to Excalidraw retries.
+- Fixed: "Session not found" shows a red notice + link back to My lessons instead of the full lesson UI.
+- Fixed: Start pack reuses an in-progress session for the same pack.
+
+## Demo click path
+1. Sign in → `/app` → **Start** on Binomial Squares → lands on `/lesson/<id>`.
+2. Step 1 Diagnose: the answer box holds `x^2 + 9`; press **Submit** (calls `/api/ai/detective`). Answer any follow-up probe if asked.
+3. After the diagnosis, press **Play explanation** (calls `/api/ai/board-tutor`, draws steps, captions always on, Web Speech when available).
+4. If Gemini is missing or bad, a red notice appears on the lesson page.
+5. Optional: **Use SVG fallback** toggles the renderer.
+
+## Next (after this lane)
+**Finish Judge E2E only**, then deploy AFTER the path works. Do not add Vapi or Stretch.
 
 ## Lane finished
 **Auth / data / deploy hardening.** Phase 3 (board playback) is untouched: no Excalidraw rewrite, no Gemini prompt changes, no pack content changes, no Vapi/Stretch.
@@ -54,7 +71,7 @@ Data persists in Supabase Postgres (not in memory); it exists only after the mig
 | `app/lesson/[id]/LessonClient.tsx` | Lesson phases, playback, error display |
 | `middleware.ts` / `lib/supabase/middleware.ts` | Auth and AAL2 route guards |
 
-## Exact next lane
+## Exact next lane (superseded — see "Next" above; deploy only after the path works)
 **Full Judge-path E2E smoke + Saad docs/gigs:** (1) apply migration + run RLS test, record PASS; (2) `npm run build`, deploy to Vercel, fill the live URL in README; (3) diagnose → board → ask → 2bx → quiz → summary on the public URL, including sign out/in as a second account; (4) Saad: docs and gig write-ups. Do not start Vapi, Stretch, or a new phase.
 
 ## Blockers

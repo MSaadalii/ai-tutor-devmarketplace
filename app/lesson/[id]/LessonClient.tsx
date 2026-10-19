@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -375,6 +376,21 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     }
   }
 
+  if (!loading && !session) {
+    return (
+      <PageShell actions={<SignOutButton />}>
+        <div className="space-y-3">
+          <AuthNotice kind="error">
+            {error ?? "Session not found or not yours."}
+          </AuthNotice>
+          <Link href="/app" className="text-sm font-medium text-teal-800 underline">
+            Back to My lessons
+          </Link>
+        </div>
+      </PageShell>
+    );
+  }
+
   if (loading) {
     return (
       <PageShell actions={<SignOutButton />}>
@@ -405,6 +421,11 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           <div className="rounded-md bg-stone-50 p-3 text-sm">
             <p className="font-medium">Diagnosis: {diagnosis.outcome}</p>
             <p className="text-stone-600">{diagnosis.explanation}</p>
+            {activePhase !== "diagnose" ? (
+              <p className="mt-1 font-medium text-teal-800">
+                Diagnosis done. Press “Play explanation” to watch the board.
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -443,6 +464,12 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             {useSvgFallback ? "Use Excalidraw" : "Use SVG fallback"}
           </Button>
         </div>
+
+        {activePhase === "diagnose" ? (
+          <p className="text-sm text-stone-600">
+            Play is locked. Submit your diagnosis below to unlock it.
+          </p>
+        ) : null}
 
         <CaptionBar text={caption || undefined} language={language} />
 

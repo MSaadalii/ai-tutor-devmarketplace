@@ -114,12 +114,14 @@ function ExcalidrawCanvas({
     }
   }, [excalidrawScene]);
 
-  const handleChange = (elements: unknown[]) => {
+  // Excalidraw reports selection in appState.selectedElementIds (not on elements).
+  const handleChange = (
+    _elements: unknown[],
+    appState: { selectedElementIds?: Record<string, boolean> } | undefined,
+  ) => {
     if (!onElementClick) return;
-    const selected = (elements as Array<{ id?: string; selected?: boolean }>)
-      .filter((el) => el.selected)
-      .map((el) => el.id)
-      .filter(Boolean) as string[];
+    const map = appState?.selectedElementIds ?? {};
+    const selected = Object.keys(map).filter((id) => map[id]);
 
     const prev = prevSelectedRef.current;
     const changed = new Set([...selected, ...prev]);

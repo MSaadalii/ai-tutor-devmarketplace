@@ -305,7 +305,7 @@ export function toExcalidrawScene(
       roundness: { type: 3 },
       boundElements: null,
       updated: Date.now(),
-      locked: true,
+      locked: false, // locked elements cannot be selected, which breaks tap-to-select
       angle: 0,
       seed: Math.floor(Math.random() * 1000000),
       version: 1,
