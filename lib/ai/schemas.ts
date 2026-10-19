@@ -1,4 +1,9 @@
 import { z } from "zod";
+import type {
+  BoardOperation,
+  NarrationStep,
+  DetectiveOutcome,
+} from "@/types";
 
 /** Approved board operation types. */
 export const boardOpTypeSchema = z.enum([
@@ -10,13 +15,13 @@ export const boardOpTypeSchema = z.enum([
 ]);
 
 /** Board op payload is flexible; the renderer validates required fields. */
-export const boardOperationSchema = z.object({
+export const boardOperationSchema: z.ZodType<BoardOperation> = z.object({
   type: boardOpTypeSchema,
   payload: z.record(z.string(), z.unknown()),
 });
 
 /** A single narrated step: one board operation + one spoken caption line. */
-export const narrationStepSchema = z.object({
+export const narrationStepSchema: z.ZodType<NarrationStep> = z.object({
   order: z.number().int().nonnegative(),
   operation: boardOperationSchema,
   spokenLine: z.string().max(160),
@@ -28,6 +33,8 @@ export const boardTutorResponseSchema = z.object({
   steps: z.array(narrationStepSchema).max(6),
   notes: z.string().max(500).optional(),
 });
+
+export type BoardTutorResponse = z.infer<typeof boardTutorResponseSchema>;
 
 /** Detective probe: a short follow-up question. */
 export const detectiveProbeSchema = z.object({
@@ -49,6 +56,8 @@ export const detectiveOutcomeSchema = z.object({
   explanation: z.string().max(500),
 });
 
+export type DetectiveResultSchema = z.infer<typeof detectiveOutcomeSchema>;
+
 /** Quiz Coach response: explanation after deterministic app grading. */
 export const quizCoachResponseSchema = z.object({
   explanation: z.string().max(500),
@@ -56,17 +65,15 @@ export const quizCoachResponseSchema = z.object({
   hint_denied: z.boolean().optional(),
 });
 
+export type QuizCoachResponse = z.infer<typeof quizCoachResponseSchema>;
+
 /** Mid-lesson text-question answer from Board Tutor. */
 export const boardAnswerResponseSchema = z.object({
   answer: z.string().max(500),
   steps: z.array(narrationStepSchema).max(3).optional(),
 });
 
-export type BoardOpType = z.infer<typeof boardOpTypeSchema>;
-export type BoardOperation = z.infer<typeof boardOperationSchema>;
-export type NarrationStep = z.infer<typeof narrationStepSchema>;
-export type BoardTutorResponse = z.infer<typeof boardTutorResponseSchema>;
-export type DetectiveProbe = z.infer<typeof detectiveProbeSchema>;
-export type DetectiveOutcome = z.infer<typeof detectiveOutcomeSchema>;
-export type QuizCoachResponse = z.infer<typeof quizCoachResponseSchema>;
 export type BoardAnswerResponse = z.infer<typeof boardAnswerResponseSchema>;
+
+// Re-export canonical runtime types so callers can import schema + type from one place.
+export type { DetectiveOutcome, BoardOperation, NarrationStep } from "@/types";

@@ -58,8 +58,11 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   const [playing, setPlaying] = useState(false);
   const [caption, setCaption] = useState<string>("");
   const [boardError, setBoardError] = useState<string | null>(null);
-  const [useExcalidraw, setUseExcalidraw] = useState(false);
+  const [useSvgFallback, setUseSvgFallback] = useState(false);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A monotonically increasing token prevents a late speech/timer callback from
+  // restarting narration after pause, replay, or navigation.
+  const playbackIdRef = useRef(0);
 
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [answerText, setAnswerText] = useState<string | null>(null);
@@ -163,6 +166,19 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   async function playBoard() {
     setBoardError(null);
     setPlaying(true);
+
+    // Resume from the next step if we already have narration; otherwise fetch.
+    if (steps.length > 0 && currentStepIndex < steps.length - 1) {
+      const playbackId = playbackIdRef.current;
+      playSteps(steps, currentStepIndex + 1, playbackId);
+      return;
+    }
+    if (steps.length > 0 && currentStepIndex >= steps.length - 1) {
+      const playbackId = playbackIdRef.current;
+      playSteps(steps, 0, playbackId);
+      return;
+    }
+
     setCurrentStepIndex(-1);
     setCaption(language === "ur" ? "وضاحت شروع ہو رہی ہے…" : "Starting explanation…");
 
@@ -175,7 +191,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         language,
       });
       setSteps(data.steps);
-      playSteps(data.steps);
+      playSteps(data.steps, 0, playbackIdRef.current);
     } catch (e) {
       setBoardError(e instanceof Error ? e.message : "Board tutor failed");
       setPlaying(false);
@@ -189,7 +205,18 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     }
   }
 
-  function playSteps(stepList: NarrationStep[], fromIndex = 0) {
+  function stopPlayback() {
+    playbackIdRef.current += 1;
+    clearStepTimer();
+    cancelSpeech();
+  }
+
+  function playSteps(
+    stepList: NarrationStep[],
+    fromIndex = 0,
+    playbackId = playbackIdRef.current,
+  ) {
+    if (playbackId !== playbackIdRef.current) return;
     clearStepTimer();
     cancelSpeech();
 
@@ -206,46 +233,43 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     setCurrentStepIndex(fromIndex);
     const step = stepList[fromIndex];
     setCaption(step.spokenLine);
+    const advance = () => {
+      if (playbackId === playbackIdRef.current) {
+        playSteps(stepList, fromIndex + 1, playbackId);
+      }
+    };
 
     if (isSpeechSupported()) {
-      speakLine(
-        step.spokenLine,
-        language,
-        () => playSteps(stepList, fromIndex + 1),
-        () => playSteps(stepList, fromIndex + 1),
-      );
+      speakLine(step.spokenLine, language, advance, advance);
       return;
     }
 
-    stepTimerRef.current = setTimeout(
-      () => playSteps(stepList, fromIndex + 1),
-      2500,
-    );
+    stepTimerRef.current = setTimeout(advance, 2500);
   }
 
   function pauseBoard() {
-    clearStepTimer();
-    cancelSpeech();
+    stopPlayback();
     setPlaying(false);
   }
 
   function replayBoard() {
-    clearStepTimer();
-    cancelSpeech();
+    stopPlayback();
     if (steps.length > 0) {
+      const playbackId = playbackIdRef.current;
       setPlaying(true);
-      playSteps(steps, 0);
+      playSteps(steps, 0, playbackId);
     }
   }
 
   useEffect(() => {
     return () => {
-      clearStepTimer();
-      cancelSpeech();
+      stopPlayback();
     };
   }, []);
 
   async function handleAskQuestion(text: string) {
+    stopPlayback();
+    setPlaying(false);
     setError(null);
     const data = await postJson<{ notes?: string }>("/api/ai/board-tutor", {
       session_id: sessionId,
@@ -259,6 +283,8 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   }
 
   async function handleTaskSubmit() {
+    stopPlayback();
+    setPlaying(false);
     setError(null);
     const data = await postJson<{ correct: boolean; message: string }>(
       "/api/board-task",
@@ -283,6 +309,8 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   }
 
   async function handleFinishQuiz() {
+    stopPlayback();
+    setPlaying(false);
     setError(null);
     const data = await postJson<{ bullets: string[] }>("/api/summary", {
       session_id: sessionId,
@@ -353,12 +381,23 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           </Button>
         </div>
 
-        <BoardToolbar
-          onPlay={playBoard}
-          onPause={pauseBoard}
-          onReplay={replayBoard}
-          disabled={activePhase === "diagnose" || playing}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BoardToolbar
+            onPlay={playBoard}
+            onPause={pauseBoard}
+            onReplay={replayBoard}
+            disabled={activePhase === "diagnose"}
+            playing={playing}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setUseSvgFallback((v) => !v)}
+          >
+            {useSvgFallback ? "Use Excalidraw" : "Use SVG fallback"}
+          </Button>
+        </div>
 
         <CaptionBar text={caption || undefined} language={language} />
 
@@ -371,6 +410,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           onElementClick={toggleElement}
           taskElementIds={pack.boardTaskElementIds}
           taskMode={activePhase === "board_task"}
+          fallback={useSvgFallback ? "svg" : "excalidraw"}
         />
 
         {activePhase === "diagnose" && (
@@ -383,7 +423,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           />
         )}
 
-        {activePhase === "question" && (
+        {(activePhase === "question" || activePhase === "board_task") && (
           <QuestionPanel
             selectedElementIds={selectedElementIds}
             answerText={answerText}

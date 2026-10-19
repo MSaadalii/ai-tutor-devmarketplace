@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import type { NarrationStep } from "@/types";
 
 const requestSchema = z.object({
   session_id: z.string().uuid(),

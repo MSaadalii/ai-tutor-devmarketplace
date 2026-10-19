@@ -1,6 +1,7 @@
-import { detectiveOutcomeSchema, type DetectiveOutcome } from "@/lib/ai/schemas";
+import { detectiveOutcomeSchema } from "@/lib/ai/schemas";
 import { callGeminiJson, type GeminiRole } from "@/lib/ai/gemini";
 import { getPack } from "@/lib/packs/binomial_square";
+import type { DetectiveOutcome } from "@/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type DetectiveInput = {

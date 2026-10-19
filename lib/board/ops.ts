@@ -286,6 +286,7 @@ export function buildSceneFromSteps(
 export function toExcalidrawScene(
   scene: BoardScene,
   language: AppLanguage = "en",
+  selectedElementIds: string[] = [],
 ): Record<string, unknown> {
   const excalidrawElements = scene.elements.map((el) => {
     const base = {
@@ -304,7 +305,7 @@ export function toExcalidrawScene(
       roundness: { type: 3 },
       boundElements: null,
       updated: Date.now(),
-      locked: false,
+      locked: true,
       angle: 0,
       seed: Math.floor(Math.random() * 1000000),
       version: 1,
@@ -350,10 +351,11 @@ export function toExcalidrawScene(
       gridSize: null,
       theme: "light",
       selectedElementIds: Object.fromEntries(
-        scene.elements.filter((e) => e.selected).map((e) => [e.id, true]),
+        scene.elements
+          .filter((e) => e.selected || selectedElementIds.includes(e.id))
+          .map((e) => [e.id, true]),
       ),
     },
-    scrollToContent: true,
     files: {},
   };
 }

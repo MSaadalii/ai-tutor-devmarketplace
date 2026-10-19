@@ -23,7 +23,7 @@ This document lists the AI services, models, and tools used in the product.
 - Zod
 - mathjs
 - `@google/generative-ai`
-- `@excalidraw/excalidraw` (to be integrated in Phase 3)
+- `@excalidraw/excalidraw` (live whiteboard rendering, SVG fallback)
 
 ## Notes
 
