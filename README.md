@@ -45,19 +45,32 @@ Then verify isolation: sign up two accounts and run `supabase/tests/rls_isolatio
 
 ## Deploy to Vercel
 
-1. Push the repo to GitHub → Vercel → **Add New Project** → import it (framework: Next.js; build command `npm run build`; no output directory override).
-2. Project Settings → Environment Variables: add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`) for Production + Preview. Do not add the service-role key unless a feature needs it.
-3. Deploy, then add the resulting URL to Supabase Redirect URLs (step 3 above).
-4. Smoke test the public URL: sign up → TOTP → `/app` → start Binomial Squares → diagnose → Play → ask → 2bx task → quiz → summary; sign out and sign in as a second account and confirm the first account's lessons are not listed.
+### Before you push
+```bash
+npm install
+npm run build   # fix any TypeScript/lint errors first
+npm run dev     # walk the demo click path locally
+```
 
-**Live URL:** _not deployed yet — fill in after the first Vercel deploy._
+### Steps
+1. Push the repo to GitHub → Vercel → **Add New Project** → import it (framework: Next.js; build command `npm run build`; no output directory override).
+2. Project Settings → Environment Variables → add for **Production + Preview**:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `GEMINI_API_KEY`
+   - `GEMINI_MODEL` (optional — defaults to `gemini-2.5-flash`)
+   - Do **not** add `SUPABASE_SERVICE_ROLE_KEY` unless a feature needs it.
+3. Deploy, then add the resulting URL to Supabase **Redirect URLs** (Authentication → URL Configuration).
+4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play (SVG board by default) → ask → 2bx task → quiz → summary. Sign out; sign in as a second account and confirm the first account's lessons are not listed.
+
+**Live URL:** _fill in after the first Vercel deploy._
 
 ## Demo click path
 
 1. Open **Start lesson** on `/` and create an account, or use **Sign in**.
 2. Complete the authenticator setup/code at `/verify-2fa`.
 3. On `/app`, choose **Binomial Squares → Start**.
-4. On the lesson page, submit a diagnostic answer, then press **Play explanation**. Captions remain visible while Excalidraw draws; use **Use SVG fallback** if needed.
+4. On the lesson page, submit the diagnostic answer (`x^2+9` is pre-filled), then press **Play explanation**. Captions are always visible. The board defaults to SVG (always works). Press **Try Excalidraw ↗** to switch to the sketch renderer; it auto-falls back to SVG if the module fails to load.
 5. Ask a board question, select the two `3x` regions, complete the quiz, and show the summary.
 
 ## Key paths

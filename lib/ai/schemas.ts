@@ -28,11 +28,20 @@ export const narrationStepSchema: z.ZodType<NarrationStep> = z.object({
   language: z.enum(["en", "ur"]),
 });
 
-/** Board Tutor response: ≤6 validated steps + optional notes. */
-export const boardTutorResponseSchema = z.object({
-  steps: z.array(narrationStepSchema).max(6),
-  notes: z.string().max(500).optional(),
-});
+/**
+ * Board Tutor response: ≤6 validated steps + optional notes.
+ *
+ * Gemini sometimes returns a raw array of steps instead of the canonical
+ * `{ "steps": [...] }` object. The preprocess coerces an array to the right
+ * shape before Zod validates it, so the schema is resilient to both forms.
+ */
+export const boardTutorResponseSchema = z.preprocess(
+  (v) => (Array.isArray(v) ? { steps: v } : v),
+  z.object({
+    steps: z.array(narrationStepSchema).max(6),
+    notes: z.string().max(500).optional(),
+  }),
+);
 
 export type BoardTutorResponse = z.infer<typeof boardTutorResponseSchema>;
 

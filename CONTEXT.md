@@ -3,82 +3,95 @@
 Read this first in every new chat before touching code.
 
 ## Last update
-Phase 2 "Judge E2E" lane — the lesson path (Start → Diagnose → Play board) is fixed for the two known bugs below. **Next work is limited to finishing the Judge E2E path only.** Deploy comes AFTER the path works. Do not add Vapi or Stretch. No secrets in this file.
+Phase 3 "Deploy" lane — the two remaining bugs (board_tutor Zod array coerce; Excalidraw export resolver exhaustive) are fixed. SVG is now the reliable default board renderer for teach mode so the Judge path is never blocked by an Excalidraw load failure. **Deploy checklist below.** Do not add Vapi or Stretch. No secrets in this file.
 
-## Phase 2 fixes (this lane)
-- **Bug A — Play stayed disabled (probe shape):** `lib/ai/schemas.ts` `detectiveProbeSchema` now accepts a string OR `{question}` and coerces a string to `{question}` before validation. `lib/ai/detective.ts` prompt now requires `probes` as `[{"question":"..."}]`. `DiagnosePanel` renders a probe as either shape via `probeText()`; `LessonClient` uses the same helper for `prior_probes` and types the diagnosis with the shared `Diagnosis` type. Play unlocks after a successful diagnose (`activePhase` moves to `board`).
-- **Bug B — Excalidraw export not found:** `components/board/ExcalidrawBoard.tsx` now resolves the component with `resolveExcalidrawExport()`: `mod.Excalidraw`, then `mod.default.Excalidraw`, then `mod.default`. If none is a component, the SVG fallback notice appears as before.
+## Phase 3 fixes (this lane)
+
+### Bug 1 — board_tutor Zod: "expected object, received array"
+- **`lib/ai/schemas.ts`** — `boardTutorResponseSchema` is now wrapped in `z.preprocess`: if the incoming value is an array it is wrapped as `{ steps: value }` before parsing. The parsed shape stays `{ steps: narrationStepSchema[].max(6), notes?: string }`.
+- **`lib/ai/boardTutor.ts`** — `TEACH_SYSTEM` and `buildTeachPrompt` both now explicitly say: respond with a JSON OBJECT with key `"steps"`, never a top-level array. The system prompt includes a correct/incorrect example.
+
+### Bug 2 — Excalidraw "export not found"
+- **`components/board/ExcalidrawBoard.tsx`** — `resolveExcalidrawExport` now tries: `mod.Excalidraw`, `mod.default?.Excalidraw`, `mod.default`, and any top-level key whose value is component-like. If none resolves it **throws** (not returns null) with a message that lists the available keys (e.g. `"Excalidraw export not found; available keys: default, ..."`). The `useEffect` that calls it catches the throw and triggers `onError` → SVG fallback.
+
+### SVG as reliable default for teach mode
+- **`components/board/BoardCanvas.tsx`** — `fallback` prop default changed from `"excalidraw"` to `"svg"`. The comment explains the strategy: SVG always works; the "Try Excalidraw" toggle switches to `fallback="excalidraw"` (which auto-reverts on load error).
+- **`app/lesson/[id]/LessonClient.tsx`** — `useSvgFallback` now starts `true` (SVG default). Toggle label: "Try Excalidraw ↗" / "Use SVG board".
+- Teaching works end-to-end on SVG. Excalidraw is opt-in and safe to try.
+
+## Phase 2 fixes (Judge E2E lane)
+- **Bug A — Play stayed disabled (probe shape):** `lib/ai/schemas.ts` `detectiveProbeSchema` accepts a string OR `{question}` and coerces a string to `{question}`. `lib/ai/detective.ts` prompt requires `probes` as `[{"question":"..."}]`. `DiagnosePanel` renders a probe as either shape via `probeText()`; `LessonClient` uses the same helper for `prior_probes`.
+- **Bug B — Excalidraw export not found:** `resolveExcalidrawExport()` first tried `mod.Excalidraw`, `mod.default.Excalidraw`, `mod.default` (Phase 2). Phase 3 extends this to any top-level key + detailed error message.
 - Status: static fixes only. `npm install && npm run build` and the click path below have **not been run** in this workspace (no shell tool). Run them first.
 
-## Judge E2E — remaining checks (only these)
-1. Sign in → `/app` → Start on Binomial Squares → `/lesson/<id>`.
-2. Diagnose: submit `x^2 + 9`. If a probe appears, answer it. Confirm Play unlocks and the diagnosis panel shows.
-3. Play explanation: board draws (Excalidraw, or SVG automatically / by toggle), captions show, speech used only when available.
-4. Missing or bad `GEMINI_API_KEY` → red notice on the lesson page, not a blank screen.
-5. Record PASS/FAIL here, then continue to the rest of the judge path (ask → 2bx → quiz → summary).
-
 ## Earlier lane: Phase 1 "Walkable lesson path"
-Start pack resumes or creates a session and opens `/lesson/[sessionId]`; DiagnosePanel is pre-filled with `x^2 + 9` for `(x+3)^2`; Play calls board-tutor and draws via Excalidraw (SVG on automatic fallback or manual toggle); captions always on; on-screen red notices for API/config errors.
+Start pack resumes or creates a session and opens `/lesson/[sessionId]`; DiagnosePanel is pre-filled with `x^2 + 9` for `(x+3)^2`; Play calls board-tutor and draws via SVG (default) or Excalidraw (opt-in); captions always on; on-screen red notices for API/config errors.
 
-## Walkable path status
-- Code changes made in this lane, **not yet executed** in this workspace (no shell tool). Run `npm install && npm run dev` and walk the demo click path before anything else.
-- Fixed: Excalidraw selection read `el.selected` (never set) → now reads `appState.selectedElementIds`; scene elements were `locked: true` (not selectable) → unlocked.
-- Fixed: Excalidraw load failure now shows a notice and switches to SVG; the manual toggle back to Excalidraw retries.
-- Fixed: "Session not found" shows a red notice + link back to My lessons instead of the full lesson UI.
+## Phase 1 walkable path status
+- Fixed: Excalidraw selection read `el.selected` (never set) → now reads `appState.selectedElementIds`.
+- Fixed: Excalidraw load failure shows a notice and switches to SVG; the manual toggle back retries.
+- Fixed: "Session not found" shows a red notice + link back to My lessons.
 - Fixed: Start pack reuses an in-progress session for the same pack.
 
 ## Demo click path
 1. Sign in → `/app` → **Start** on Binomial Squares → lands on `/lesson/<id>`.
 2. Step 1 Diagnose: the answer box holds `x^2 + 9`; press **Submit** (calls `/api/ai/detective`). Answer any follow-up probe if asked.
-3. After the diagnosis, press **Play explanation** (calls `/api/ai/board-tutor`, draws steps, captions always on, Web Speech when available).
+3. After the diagnosis, press **Play explanation** (calls `/api/ai/board-tutor`, draws steps on SVG board by default, captions always on, Web Speech when available).
 4. If Gemini is missing or bad, a red notice appears on the lesson page.
-5. Optional: **Use SVG fallback** toggles the renderer.
+5. Optional: **Try Excalidraw ↗** switches to Excalidraw (auto-falls back to SVG on load error). **Use SVG board** switches back.
 
-## Next (after this lane)
-**Finish Judge E2E only**, then deploy AFTER the path works. Do not add Vapi or Stretch.
+## Deploy checklist (Phase 3)
 
-## DEMO CLICK PATH
-1. Sign in → `/app` → **Start** on Binomial Squares → `/lesson/<id>`.
-2. Diagnose: `x^2 + 9` is pre-filled → **Submit**. Answer any probe. Play unlocks.
-3. **Play explanation** → board draws → captions show → speech only if the browser supports it.
-4. Gemini missing or bad → red notice on the lesson page.
-5. **Use SVG fallback** toggles the renderer.
+### Pre-deploy: run locally first
+```bash
+npm install
+npm run build   # must pass with no TypeScript/lint errors
+npm run dev     # walk the demo click path
+```
 
-## Lane finished
-**Auth / data / deploy hardening.** Phase 3 (board playback) is untouched: no Excalidraw rewrite, no Gemini prompt changes, no pack content changes, no Vapi/Stretch.
+### Apply the database migration
+1. Supabase Dashboard → SQL Editor → paste `supabase/migrations/0001_core_schema.sql` → Run.  
+   (It is idempotent; safe to re-run.)
+2. Sign up two accounts and run `supabase/tests/rls_isolation.sql` — expect `RLS ISOLATION: PASS`.
 
-## What changed in this lane
-- **Missing component fixed:** `components/layout/PageShell.tsx` did not exist but was imported by `/`, `/login`, `/signup`, `/verify-2fa`, `/app` and the lesson page — `next build` and `next dev` would fail. Created.
-- **Gemini default model:** was the retired `gemini-2.5-flash-preview-05-20`; now `gemini-2.5-flash` (empty `GEMINI_MODEL` falls back). `maxOutputTokens` raised 2048 → 8192 so thinking tokens don't truncate the JSON.
-- **Missing-env errors:** `lib/apiError.ts` (`ConfigError`, `toErrorResponse`). Missing `GEMINI_API_KEY` / Supabase vars → HTTP 503 `{error, code:"missing_config"}`; bad key / bad model / quota get readable messages. All AI + summary + board-task routes use it. `LessonClient` shows every API failure in the red notice (previously a failed call produced an unhandled rejection and a blank/stuck panel) and warns on load via `GET /api/health`.
-- **Quiz/diagnose state:** a failed quiz submit no longer advances to the next item; probe answers are committed only after a successful diagnose call.
-- **Lint/build nits:** unused vars (`_info`, `_text`), `let`→`const`, Excalidraw stylesheet import (`@excalidraw/excalidraw/index.css`).
-- **Migrations resolved:** `0001_core_schema.sql` is the single source of truth. The other two files are `select 1;` no-op stubs.
-- **`.env.example`:** dangling Uplift comment now has its variable (`UPLIFT_AI_API_KEY=`).
-- **Ownership guard:** `lib/routes/sessionGuard.ts` — each API route checks the session belongs to the user before spending a Gemini call or writing (account B gets 404).
+### Supabase Auth setup
+1. Authentication → Providers: enable **Email** (email/password). Enable **MFA (TOTP)**.
+2. If "Confirm email" is on, users must click the inbox link before signing in. For fast demo, turn it off.
+3. Authentication → URL Configuration: set **Site URL** to the deployed URL and add `https://<your-app>.vercel.app/**` and `http://localhost:3000/**` to **Redirect URLs**.
 
-## Secrets (names only)
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server-only, unused by Core), `GEMINI_API_KEY`, optional `GEMINI_MODEL`, optional `UPLIFT_AI_API_KEY`.
+### Vercel deploy
+1. Push repo to GitHub → Vercel → **Add New Project** → import (framework: Next.js; build: `npm run build`).
+2. Project Settings → Environment Variables — add for Production + Preview:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `GEMINI_API_KEY`
+   - `GEMINI_MODEL` (optional; default: `gemini-2.5-flash`)
+   - Do **not** add `SUPABASE_SERVICE_ROLE_KEY` unless a feature requires it.
+3. Deploy → add the Vercel URL to Supabase Redirect URLs.
+4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play → ask → 2bx task → quiz → summary. Sign out and sign in as a second account — confirm first account's lessons are not listed.
+
+**Live URL:** _fill in after the first Vercel deploy._
+
+## Judge E2E — checks to run on the live URL (or locally)
+1. Sign in → `/app` → Start on Binomial Squares → `/lesson/<id>`.
+2. Diagnose: submit `x^2 + 9`. If a probe appears, answer it. Confirm Play unlocks and the diagnosis panel shows.
+3. Play explanation: SVG board draws (captions show, speech used only when available).
+4. Missing or bad `GEMINI_API_KEY` → red notice on the lesson page, not a blank screen.
+5. Optional: "Try Excalidraw ↗" → Excalidraw draws (or falls back to SVG with a notice).
+6. Ask → 2bx task → quiz → summary.
+7. Sign out; sign in as Account B → `/app` lists none of Account A's sessions; `/lesson/<A-id>` shows "Session not found".
+8. Record PASS/FAIL.
+
+## Secrets (names only — no values in this file)
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server-only; not needed by Core), `GEMINI_API_KEY`, optional `GEMINI_MODEL`, optional `UPLIFT_AI_API_KEY`.
 
 ## Core SQL migration
-Apply **only** `supabase/migrations/0001_core_schema.sql` (idempotent; safe to re-run — it drops the old broad `owner_all` policies and installs the new ones).
+Apply **only** `supabase/migrations/0001_core_schema.sql` (idempotent). The other two migration files are no-op stubs.
 
 ## RLS isolation
+All 8 tables have RLS enabled. Child insert/update policies verify the session belongs to the calling user. `supabase/tests/rls_isolation.sql` asserts Account B reads 0 rows from every table, updates/deletes 0, and gets RLS errors on cross-account inserts.
 
-**Policy review (done, static):** all 8 tables (`learning_sessions, attempts, board_states, narration_steps, model_runs, quiz_results, lesson_summaries, activity_events`) have RLS enabled.
-- Gap found: the old single `owner_all` policy only checked `auth.uid() = user_id`, so account B could insert a child row with its own `user_id` but A's `session_id` (and use a stolen session id to pollute A's data).
-- Fix: separate select/insert/update/delete policies `to authenticated`; child insert/update `with check` also requires `exists (select 1 from learning_sessions s where s.id = session_id and s.user_id = auth.uid())`. `activity_events` does so when `session_id` is not null. Select/delete stay owner-only.
-
-**Two-account test:** `supabase/tests/rls_isolation.sql` (run in SQL Editor after signing up two accounts; transactional, rolled back). It has A create a session plus a row in every child table, then asserts B: reads 0 rows from every table, updates/deletes 0 rows, and gets an RLS error when inserting attempts/quiz_results/narration_steps onto A's session or a session as A.
-
-**Result: NOT YET RUN against a live Supabase project** — no database was reachable from this workspace, so the script and the policies are reviewed but unexecuted. First action for the next lane: apply the migration, create two users, run the script, and record `PASS` here. UI check: account B's `/app` lists none of A's sessions and `/lesson/<A-id>` shows "Session not found".
-
-## Deploy status
-- `npm run build` and `npm run dev` were **not executed** in this workspace session (no shell tool). The known blocker (`PageShell` missing) and the lint nits are fixed by inspection; run `npm install && npm run build` before pushing and fix anything the compiler reports.
-- Vercel: not deployed. Exact steps (env vars, Supabase Site URL / Redirect URLs) are in `README.md`. Live URL placeholder is in the README.
-
-## Persistence note
-Data persists in Supabase Postgres (not in memory); it exists only after the migration is applied.
+**Result: NOT YET RUN against a live Supabase project** — apply the migration and run the test first.
 
 ## Important paths
 
@@ -92,9 +105,12 @@ Data persists in Supabase Postgres (not in memory); it exists only after the mig
 | `supabase/tests/rls_isolation.sql` | Two-account isolation test |
 | `app/lesson/[id]/LessonClient.tsx` | Lesson phases, playback, error display |
 | `middleware.ts` / `lib/supabase/middleware.ts` | Auth and AAL2 route guards |
-
-## Exact next lane (superseded — see "Next" above; deploy only after the path works)
-**Full Judge-path E2E smoke + Saad docs/gigs:** (1) apply migration + run RLS test, record PASS; (2) `npm run build`, deploy to Vercel, fill the live URL in README; (3) diagnose → board → ask → 2bx → quiz → summary on the public URL, including sign out/in as a second account; (4) Saad: docs and gig write-ups. Do not start Vapi, Stretch, or a new phase.
+| `components/board/BoardCanvas.tsx` | SVG/Excalidraw board, SVG default |
+| `components/board/ExcalidrawBoard.tsx` | Excalidraw loader + exhaustive resolver |
+| `lib/ai/schemas.ts` | boardTutorResponseSchema with array preprocess |
+| `lib/ai/boardTutor.ts` | Teach prompt enforces JSON object with "steps" |
 
 ## Blockers
-Live Supabase project + `GEMINI_API_KEY` must be set in Secrets before the E2E can run. No secret values belong in this file.
+- Live Supabase project + `GEMINI_API_KEY` must be set in Secrets before the E2E can run.
+- `npm run build` must pass locally before pushing to Vercel.
+- No secret values belong in this file.

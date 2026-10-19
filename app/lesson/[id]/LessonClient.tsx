@@ -55,7 +55,10 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   const [caption, setCaption] = useState<string>("");
   const [boardError, setBoardError] = useState<string | null>(null);
   const [configWarning, setConfigWarning] = useState<string | null>(null);
-  const [useSvgFallback, setUseSvgFallback] = useState(false);
+  // SVG is the reliable default for teach mode so the Judge path is never
+  // blocked by an Excalidraw load failure. The user can switch to Excalidraw
+  // via the toggle (it will auto-revert to SVG if the load fails).
+  const [useSvgFallback, setUseSvgFallback] = useState(true);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // A monotonically increasing token prevents a late speech/timer callback from
   // restarting narration after pause, replay, or navigation.
@@ -450,8 +453,13 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             variant="ghost"
             size="sm"
             onClick={() => setUseSvgFallback((v) => !v)}
+            title={
+              useSvgFallback
+                ? "Switch to Excalidraw (sketch look; falls back to SVG on load error)"
+                : "Switch to SVG board (always works)"
+            }
           >
-            {useSvgFallback ? "Use Excalidraw" : "Use SVG fallback"}
+            {useSvgFallback ? "Try Excalidraw ↗" : "Use SVG board"}
           </Button>
         </div>
 

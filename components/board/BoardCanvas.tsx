@@ -22,14 +22,29 @@ export type BoardCanvasProps = {
   taskElementIds?: string[];
   taskMode?: boolean;
   language?: AppLanguage;
+  /**
+   * "excalidraw" (default): attempt Excalidraw, auto-fall-back to SVG on any
+   *   load error. A small notice is shown and the toggle lets the user retry.
+   * "svg": use SVG directly (reliable path; also used as the automatic fallback).
+   *
+   * SVG is the reliable default for the teach flow so the Judge path is never
+   * blocked by an Excalidraw bundling failure.
+   */
   fallback?: "svg" | "excalidraw";
   children?: ReactNode;
 };
 
 /**
- * BoardCanvas — client-only Excalidraw canvas with automatic SVG fallback.
- * Replays validated board ops one step at a time for the live teaching loop.
- * In task mode the four area-model regions are tappable for the 2bx task.
+ * BoardCanvas — Excalidraw canvas with automatic SVG fallback.
+ *
+ * Teach-mode strategy:
+ *   • LessonClient starts with fallback="svg" so the board always works.
+ *   • The "Use Excalidraw" toggle switches to fallback="excalidraw", which
+ *     attempts to load Excalidraw and silently falls back to SVG on failure.
+ *   • The "Use SVG fallback" toggle switches back to fallback="svg".
+ *
+ * This keeps the Judge path unblocked while still offering the richer
+ * Excalidraw experience when the module loads correctly.
  */
 export function BoardCanvas({
   steps = [],
@@ -39,13 +54,14 @@ export function BoardCanvas({
   taskElementIds = [],
   taskMode = false,
   language = "en",
-  fallback = "excalidraw",
+  fallback = "svg",
   children,
 }: BoardCanvasProps) {
   const [excalidrawFailed, setExcalidrawFailed] = useState(false);
   const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
-  // Choosing Excalidraw again (manual toggle) retries the renderer.
+  // Choosing Excalidraw again (manual toggle) resets the failure state so the
+  // dynamic import is retried.
   useEffect(() => {
     if (fallback === "excalidraw") {
       setExcalidrawFailed(false);
@@ -59,6 +75,7 @@ export function BoardCanvas({
   );
 
   const hasSteps = steps.length > 0;
+  // Use SVG when: the prop says so, OR Excalidraw failed to load.
   const useSvg = fallback === "svg" || excalidrawFailed;
 
   function handleRendererFailure(message: string) {
@@ -79,12 +96,13 @@ export function BoardCanvas({
     <div className="space-y-3">
       {children}
 
+      {/* Show a notice only when Excalidraw was explicitly chosen but failed. */}
       {excalidrawFailed && fallback === "excalidraw" ? (
         <p
           role="status"
           className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
         >
-          Excalidraw could not load, so the board switched to the SVG view.
+          Excalidraw could not load — board switched to SVG view automatically.
           {failureMessage ? ` (${failureMessage})` : ""} Use the toggle to retry.
         </p>
       ) : null}

@@ -71,7 +71,12 @@ export async function runBoardTutor(
 
 const TEACH_SYSTEM = `
 You are a board tutor explaining a math concept with live, step-by-step whiteboard moves.
-Return at most 6 steps. Each step has:
+
+CRITICAL: You MUST return a JSON OBJECT with the key "steps". NEVER return a top-level JSON array.
+Correct:   { "steps": [ ... ], "notes": "..." }
+Incorrect: [ { "order": 0, ... }, { "order": 1, ... } ]
+
+Return at most 6 steps inside the "steps" array. Each step has:
 - order: 0-based integer
 - operation: one of {add_text, add_shape, update_label, highlight, clear_highlight}
 - payload: object with required fields (x, y, text for add_text; x, y, width, height, elementId for add_shape; elementId, text for update_label; elementId for highlight/clear_highlight)
@@ -109,7 +114,8 @@ ${JSON.stringify(regionIds, null, 2)}
 
 ${languageNote}
 
-Return the JSON schema of board steps (max 6).
+Respond with a JSON OBJECT that has the key "steps" (an array of up to 6 board steps).
+Do NOT return a top-level JSON array — always wrap steps inside {"steps": [...]}.
 `;
 }
 

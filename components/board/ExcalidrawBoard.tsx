@@ -41,10 +41,9 @@ export function ExcalidrawBoard({
     import("@excalidraw/excalidraw")
       .then((mod) => {
         if (!mounted) return;
+        // resolveExcalidrawExport now throws with a detailed message if it
+        // cannot find a component-like export.
         const Comp = resolveExcalidrawExport(mod);
-        if (!Comp) {
-          throw new Error("Excalidraw export not found");
-        }
         setExcalidrawComponent(() => Comp);
       })
       .catch((e) => {
@@ -91,16 +90,37 @@ function isComponentLike(value: unknown): value is ComponentType<unknown> {
 }
 
 /**
- * Bundler-independent resolution: mod.Excalidraw, then mod.default.Excalidraw,
- * then mod.default. Returns null when none of them is a component.
+ * Bundler-independent resolution of the Excalidraw component.
+ *
+ * Tries, in order:
+ *   1. mod.Excalidraw
+ *   2. mod.default?.Excalidraw
+ *   3. mod.default
+ *   4. Any other top-level key whose value is component-like
+ *
+ * If nothing resolves, throws an error that lists the keys that were found so
+ * the caller can surface a useful diagnostic in the SVG-fallback notice.
  */
 export function resolveExcalidrawExport(
   mod: unknown,
-): ComponentType<unknown> | null {
+): ComponentType<unknown> {
   const m = (mod ?? {}) as Record<string, unknown>;
   const def = (m.default ?? {}) as Record<string, unknown>;
-  const candidates: unknown[] = [m.Excalidraw, def.Excalidraw, m.default];
-  return candidates.find(isComponentLike) ?? null;
+
+  // Prioritised candidates.
+  const prioritised: unknown[] = [m.Excalidraw, def.Excalidraw, m.default];
+  const found = prioritised.find(isComponentLike);
+  if (found) return found as ComponentType<unknown>;
+
+  // Fallback: scan every top-level key.
+  for (const key of Object.keys(m)) {
+    if (isComponentLike(m[key])) return m[key] as ComponentType<unknown>;
+  }
+
+  const availableKeys = Object.keys(m).join(", ") || "(none)";
+  throw new Error(
+    `Excalidraw export not found; available keys: ${availableKeys}`,
+  );
 }
 
 function ExcalidrawCanvas({
