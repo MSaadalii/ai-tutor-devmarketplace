@@ -69,6 +69,8 @@ SPEC **Core:** Next.js app, schema, auth, pack content, live board teach loop, Q
 
 **Stretch** only if Core Judge path (SPEC §8) is green: Vapi, barge-in, Teach-the-AI, viva.
 
+**Bootstrap (during event, after 9:00 AM PKT 19 Oct):** Next.js scaffold, folder structure, reusable UI stubs, `.env.example`, and pack placeholder were added in-repo so DevMarketplace tokens focus on Auth / Gemini / Excalidraw / deploy — not blank-app setup. Organizers confirmed this bootstrap approach for the team.
+
 ---
 
 ## 5. AI tools disclosure

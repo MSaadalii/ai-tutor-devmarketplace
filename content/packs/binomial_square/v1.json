@@ -1,0 +1,11 @@
+{
+  "id": "binomial_square",
+  "version": "1",
+  "title": "Binomial Squares",
+  "examplePrompt": "(x+3)^2",
+  "commonWrong": "x^2+9",
+  "misconceptions": [],
+  "quiz": [],
+  "boardTaskElementIds": [],
+  "notes": "Saad lane: expand catalog, probes, quiz, 2bx IDs, Urdu seeds."
+}

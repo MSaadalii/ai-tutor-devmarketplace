@@ -1,9 +1,29 @@
-:HACKATHON_PROMPTS.md
+# Local team notes / prompt dumps
+HACKATHON_PROMPTS.md
 BUILD_FLOW.md
 SPEC_AI_TUTOR.md
+README.next-scaffold.md
+
+# Env
 .env
 .env.local
 .env*.local
+
+# Dependencies / build
 node_modules/
 .next/
+out/
+build/
 .vercel/
+
+# Debug / OS
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.pem
+Thumbs.db
+
+# TypeScript
+next-env.d.ts
+*.tsbuildinfo
