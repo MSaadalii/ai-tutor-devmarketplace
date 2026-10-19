@@ -28,14 +28,13 @@ If anything here is unclear, we will correct this file immediately on request.
 | File | Purpose | Product code? |
 |------|---------|---------------|
 | `SPEC.md` | Product scope, Core/Stretch, Judge path, M1–M6 | No |
-| `SPEC_AI_TUTOR.md` | Duplicate/sync copy of SPEC for team reference | No |
 | `TECH.md` | Locked stack, fallbacks, why each tool | No |
 | `AGENTS.md` | Instructions for DevMarketplace coding agents | No |
 | `.agents/skills/core-mvp/SKILL.md` | AI-readiness skill: Core MVP only | No |
 | `PRIOR_WORK.md` | This disclosure | No |
 | `.gitignore` | Keeps secrets / local notes out of git | No |
 
-**Local only (not required in public git):** `BUILD_FLOW.md` (team day plan), prompt drafts humans paste into DevMarketplace.
+**Local only (not required in public git):** `BUILD_FLOW.md` (team day plan), `SPEC_AI_TUTOR.md` (local SPEC copy), prompt drafts humans paste into DevMarketplace.
 
 ---
 
