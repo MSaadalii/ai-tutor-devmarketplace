@@ -1,25 +1,27 @@
 # AGENTS.md — Visual AI Tutor
 
-Instructions for **DevMarketplace coding agents** working in this repo. Humans paste prompts from `HACKATHON_PROMPTS.md`. Read `SPEC.md` before large changes.
+Instructions for **DevMarketplace coding agents** working in this repo. Humans provide short task prompts at runtime (not stored as a prompt dump in git). Read `SPEC.md` and `PRIOR_WORK.md` before large changes.
 
 ## Product (one sentence)
 
-STEM tutor: topic/pack in → Gemini returns validated Excalidraw board JSON → live draw + Web Speech/captions → board text Q&A → quiz → lesson summary → saved under Supabase Auth + TOTP 2FA.
+STEM tutor: topic/pack in → Gemini returns validated Excalidraw board JSON → live draw + Web Speech/captions (Uplift AI for Urdu when configured) → board text Q&A → quiz → lesson summary → saved under Supabase Auth + TOTP 2FA.
 
 ## Source of truth
 
 | File | Role |
 |------|------|
 | `SPEC.md` | Product scope: Core vs Stretch vs Roadmap |
+| `PRIOR_WORK.md` | Pre-build decisions (Excalidraw setup plan, no pre-start product code) |
+| `TECH.md` | Locked stack, fallbacks, why each tool |
 | `AGENTS.md` | How agents must build |
-| `HACKATHON_PROMPTS.md` | Ordered human prompts per teammate |
+| `.agents/skills/` | Focused skills (e.g. core-mvp) |
 | `AI_DISCLOSURE.md` | Create during build; list models/tools |
 
 **Core only until Judge Test Path (SPEC §8) is green on a public URL.** Stretch (Vapi, Teach-the-AI) only after Core is deployed.
 
-## Stack (do not substitute without asking)
+## Stack (locked — do not substitute without asking)
 
-Next.js (App Router) + TypeScript + Tailwind + shadcn/ui · Supabase (Auth TOTP, Postgres, RLS) · Gemini 2.5 Flash + Zod · `@excalidraw/excalidraw` (client-only; SVG fallback OK) · mathjs · Web Speech API · Vercel · **Urdu TTS:** prefer **Uplift AI** when available; else `speechSynthesis` + captions always on.
+Next.js (App Router) + TypeScript + Tailwind + shadcn/ui · Supabase (Auth TOTP, Postgres, RLS) · Gemini 2.5 Flash + Zod · `@excalidraw/excalidraw` (client-only; SVG fallback OK) · mathjs · Web Speech API · **Uplift AI** (Urdu TTS when available) · Vercel · **Vapi** (Stretch only).
 
 ## Team lanes (do not cross without merge plan)
 
@@ -32,22 +34,25 @@ Next.js (App Router) + TypeScript + Tailwind + shadcn/ui · Supabase (Auth TOTP,
 
 ## Hard rules
 
-1. **No product code before 9:00 AM PKT, 19 Oct 2026** (event rule). After that, only DevMarketplace agents for coding (event rule).
+1. **No product code before 9:00 AM PKT, 19 October 2026.** During the event, follow organizer rules for which coding agents are allowed.
 2. Implement **SPEC Core** first. Do not start Vapi / Teach-the-AI / LiveKit until Core demo path works.
 3. Gemini output must be **Zod-validated**. Never draw unvalidated board ops. Never pretend hardcoded text is a live model call.
 4. Pack algebra + `2bx` hits graded in **app code** (mathjs + templates), not by Gemini.
 5. Secrets only in env / Supabase; never commit `.env`.
-6. Prefer small PRs/commits: one vertical slice per prompt (auth → schema → board → AI → quiz → summary → deploy).
+6. Prefer small commits: one vertical slice per task (auth → schema → board → AI → quiz → summary → deploy).
 7. Captions always on. Audio failure must not block the lesson.
 8. Token discipline: one focused task per agent turn; reuse existing files; no drive-by refactors.
 
-## Board operation schema (canonical)
+## Excalidraw setup (from PRIOR_WORK — implement during build)
 
-Agents must generate/consume ops like:
+- Package: `@excalidraw/excalidraw`, client-only (`ssr: false`).
+- Input: Zod-validated ops from Board Tutor (`add_text`, `add_shape`, `update_label`, `highlight`, `clear_highlight`).
+- MCP = optional authoring aid only; **not** required on the judge URL.
+- Fallback: React/SVG area model with the same op applicator.
 
-- `add_text` | `add_shape` | `update_label` | `highlight` | `clear_highlight`
+## Board narration step shape
 
-Each narration step: `{ order, operation, spokenLine, language: "en" | "ur" }` with `spokenLine` ≤ 160 chars, plain text (no HTML).
+`{ order, operation, spokenLine, language: "en" | "ur" }` — `spokenLine` ≤ 160 chars, plain text (no HTML).
 
 ## AI roles (Core)
 
@@ -63,4 +68,4 @@ Judge can on **public URL**: sign up + TOTP → submit `x²+9` for `(x+3)²` →
 
 ## Stretch (later)
 
-Vapi voice teach/viva + barge-in; Teach-the-AI. Web Speech remains fallback. LiveKit = Roadmap only.
+Vapi voice teach/viva + barge-in; Teach-the-AI. Web Speech / Uplift remain fallback. LiveKit = Roadmap only.
