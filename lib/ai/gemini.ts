@@ -1,15 +1,22 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z, type ZodTypeAny } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ConfigError } from "@/lib/apiError";
 
-export const GEMINI_MODEL =
-  process.env.GEMINI_MODEL ?? "gemini-2.5-flash-preview-05-20";
+export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+
+/** Read at call time; an empty GEMINI_MODEL falls back to the default. */
+export function getGeminiModelName(): string {
+  return process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+}
 
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
-    throw new Error(
-      "Missing GEMINI_API_KEY. Add it in the workspace Secrets panel.",
+    throw new ConfigError(
+      "Gemini is not configured. Add GEMINI_API_KEY in the workspace Secrets panel " +
+        "(optional: GEMINI_MODEL), then retry.",
+      ["GEMINI_API_KEY"],
     );
   }
   return key;
@@ -18,14 +25,15 @@ function getApiKey(): string {
 export function getGeminiModel(system?: string) {
   const genAI = new GoogleGenerativeAI(getApiKey());
   return genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
+    model: getGeminiModelName(),
     systemInstruction: system
       ? { role: "system", parts: [{ text: system }] }
       : undefined,
     generationConfig: {
       responseMimeType: "application/json",
       temperature: 0.2,
-      maxOutputTokens: 2048,
+      // 2.5 models spend output tokens on thinking; leave headroom for the JSON.
+      maxOutputTokens: 8192,
     },
   });
 }
@@ -95,7 +103,7 @@ export async function callGeminiJson<T extends ZodTypeAny>(
     return { output: result.data, latencyMs, status: "ok" };
   }
 
-  let first = await attempt();
+  const first = await attempt();
   if (first.status === "ok") {
     if (supabase) {
       await persistModelRun(supabase, {
@@ -162,7 +170,7 @@ async function persistModelRun(
       session_id: input.sessionId,
       user_id: input.userId,
       role: input.role,
-      model: GEMINI_MODEL,
+      model: getGeminiModelName(),
       output: input.output ?? {},
       latency_ms: input.latencyMs,
       status: input.status,

@@ -24,7 +24,8 @@ export function QuizPanel({
   items: QuizItem[];
   language: AppLanguage;
   results: QuizResult[];
-  onSubmit: (seed: string, answer: string) => Promise<void>;
+  /** Resolves true when the answer was graded; false keeps the student on this item. */
+  onSubmit: (seed: string, answer: string) => Promise<boolean>;
   onFinish: () => Promise<void>;
 }) {
   const [index, setIndex] = useState(results.length);
@@ -37,8 +38,9 @@ export function QuizPanel({
   async function handleSubmit() {
     if (!current) return;
     setLoading(true);
-    await onSubmit(current.seed, answer);
+    const ok = await onSubmit(current.seed, answer);
     setLoading(false);
+    if (!ok) return;
     setAnswer("");
     setIndex((i) => i + 1);
   }

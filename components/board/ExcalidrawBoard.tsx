@@ -1,5 +1,6 @@
 "use client";
 
+import "@excalidraw/excalidraw/index.css";
 import {
   useEffect,
   useMemo,

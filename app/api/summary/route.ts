@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { toErrorResponse } from "@/lib/apiError";
+import { requireOwnedSession } from "@/lib/routes/sessionGuard";
 
 const requestSchema = z.object({
   session_id: z.string().uuid(),
@@ -27,6 +29,9 @@ export async function POST(request: Request) {
     }
 
     const { session_id, language } = parsed.data;
+
+    const denied = await requireOwnedSession(supabase, session_id, user.id);
+    if (denied) return denied;
 
     // Fetch stored narration steps and quiz results.
     const { data: steps } = await supabase
@@ -104,9 +109,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(summary);
   } catch (error) {
-    console.error("Summary route error:", error);
-    const message =
-      error instanceof Error ? error.message : "Summary failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error, "Summary failed");
   }
 }

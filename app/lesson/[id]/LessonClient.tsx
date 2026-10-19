@@ -58,6 +58,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   const [playing, setPlaying] = useState(false);
   const [caption, setCaption] = useState<string>("");
   const [boardError, setBoardError] = useState<string | null>(null);
+  const [configWarning, setConfigWarning] = useState<string | null>(null);
   const [useSvgFallback, setUseSvgFallback] = useState(false);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // A monotonically increasing token prevents a late speech/timer callback from
@@ -133,34 +134,69 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     void loadSession();
   }, [loadSession]);
 
+  // Warn up-front when Gemini is not configured (booleans only, no values).
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h: { gemini?: boolean }) => {
+        if (h.gemini === false) {
+          setConfigWarning(
+            "Gemini is not configured. Add GEMINI_API_KEY in the workspace " +
+              "Secrets panel — diagnosis, board explanation and quiz coaching need it.",
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   async function postJson<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Request failed");
+    let data: { error?: string } & Record<string, unknown> = {};
+    try {
+      data = await res.json();
+    } catch {
+      // Non-JSON body (e.g. platform error page) — fall through to status text.
+    }
+    if (!res.ok) {
+      throw new Error(data.error ?? `Request failed (${res.status})`);
+    }
     return data as T;
+  }
+
+  /** Runs a lesson action; any failure is shown in the red notice, never swallowed. */
+  async function guarded(action: () => Promise<void>): Promise<boolean> {
+    try {
+      await action();
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+      return false;
+    }
   }
 
   async function handleDiagnose(answer: string, nextProbeAnswers: string[]) {
     setError(null);
-    setProbeAnswers(nextProbeAnswers);
-    const data = await postJson<{
-      outcome: string;
-      explanation: string;
-      probes?: { question: string }[];
-      misconception_id?: string;
-    }>("/api/ai/detective", {
-      session_id: sessionId,
-      problem: PROBLEM,
-      student_answer: answer,
-      prior_probes: diagnosis?.probes?.map((p) => p.question),
-      prior_responses: nextProbeAnswers,
-      language,
+    await guarded(async () => {
+      const data = await postJson<{
+        outcome: string;
+        explanation: string;
+        probes?: { question: string }[];
+        misconception_id?: string;
+      }>("/api/ai/detective", {
+        session_id: sessionId,
+        problem: PROBLEM,
+        student_answer: answer,
+        prior_probes: diagnosis?.probes?.map((p) => p.question),
+        prior_responses: nextProbeAnswers,
+        language,
+      });
+      setProbeAnswers(nextProbeAnswers);
+      setDiagnosis(data);
     });
-    setDiagnosis(data);
   }
 
   async function playBoard() {
@@ -271,52 +307,60 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     stopPlayback();
     setPlaying(false);
     setError(null);
-    const data = await postJson<{ notes?: string }>("/api/ai/board-tutor", {
-      session_id: sessionId,
-      problem: PROBLEM,
-      mode: "answer",
-      question: text,
-      selected_element_ids: selectedElementIds,
-      language,
+    await guarded(async () => {
+      const data = await postJson<{ notes?: string }>("/api/ai/board-tutor", {
+        session_id: sessionId,
+        problem: PROBLEM,
+        mode: "answer",
+        question: text,
+        selected_element_ids: selectedElementIds,
+        language,
+      });
+      setAnswerText(data.notes ?? "Answer received.");
     });
-    setAnswerText(data.notes ?? "Answer received.");
   }
 
   async function handleTaskSubmit() {
     stopPlayback();
     setPlaying(false);
     setError(null);
-    const data = await postJson<{ correct: boolean; message: string }>(
-      "/api/board-task",
-      {
-        session_id: sessionId,
-        selected_element_ids: taskSelections,
-        language,
-      },
-    );
-    setTaskResult(data);
+    await guarded(async () => {
+      const data = await postJson<{ correct: boolean; message: string }>(
+        "/api/board-task",
+        {
+          session_id: sessionId,
+          selected_element_ids: taskSelections,
+          language,
+        },
+      );
+      setTaskResult(data);
+    });
   }
 
   async function handleQuizSubmit(seed: string, answer: string) {
     setError(null);
-    const data = await postJson<QuizResult>("/api/ai/quiz-explain", {
-      session_id: sessionId,
-      item_seed: seed,
-      answer,
-      language,
+    return guarded(async () => {
+      const data = await postJson<QuizResult>("/api/ai/quiz-explain", {
+        session_id: sessionId,
+        item_seed: seed,
+        answer,
+        language,
+      });
+      setQuizResults((prev) => [...prev, data]);
     });
-    setQuizResults((prev) => [...prev, data]);
   }
 
   async function handleFinishQuiz() {
     stopPlayback();
     setPlaying(false);
     setError(null);
-    const data = await postJson<{ bullets: string[] }>("/api/summary", {
-      session_id: sessionId,
-      language,
+    await guarded(async () => {
+      const data = await postJson<{ bullets: string[] }>("/api/summary", {
+        session_id: sessionId,
+        language,
+      });
+      setSummary(data.bullets);
     });
-    setSummary(data.bullets);
   }
 
   function toggleElement(id: string) {
@@ -353,6 +397,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           <LessonStepper activeIndex={activeIndex} />
         </div>
 
+        {configWarning ? <AuthNotice kind="error">{configWarning}</AuthNotice> : null}
         {error ? <AuthNotice kind="error">{error}</AuthNotice> : null}
         {boardError ? <AuthNotice kind="error">{boardError}</AuthNotice> : null}
 
@@ -419,7 +464,6 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             diagnosis={diagnosis}
             onDiagnose={handleDiagnose}
             probeAnswers={probeAnswers}
-            onProbeAnswersChange={setProbeAnswers}
           />
         )}
 

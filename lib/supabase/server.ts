@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { ConfigError } from "@/lib/apiError";
 
 /**
  * Server-component / route-handler client bound to the request cookie store.
@@ -11,8 +12,10 @@ export async function getSupabaseServerClient() {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anon) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    throw new ConfigError(
+      "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and " +
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY in the workspace Secrets panel.",
+      ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"],
     );
   }
 
@@ -45,8 +48,10 @@ export function getSupabaseServiceClient() {
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !service) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+    throw new ConfigError(
+      "Supabase service role is not configured. Add SUPABASE_SERVICE_ROLE_KEY " +
+        "(server-only) in the workspace Secrets panel.",
+      ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
     );
   }
 

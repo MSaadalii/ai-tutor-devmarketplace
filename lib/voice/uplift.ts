@@ -15,7 +15,8 @@ export type UpliftTtsResult = {
   audioUrl: string;
 } | null;
 
-export async function synthesizeUrdu(_text: string): Promise<UpliftTtsResult> {
+export async function synthesizeUrdu(text: string): Promise<UpliftTtsResult> {
+  void text;
   const key = process.env.UPLIFT_AI_API_KEY;
   if (!key) {
     // No key configured: caller must fall back to browser Web Speech.

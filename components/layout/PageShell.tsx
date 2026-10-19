@@ -1,51 +1,42 @@
-"use client";
-
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type PageShellProps = {
-  children: React.ReactNode;
-  wide?: boolean;
-  actions?: React.ReactNode;
-  className?: string;
-};
-
+/**
+ * Shared page chrome: header (brand + optional actions) and a centered main
+ * column. `wide` is used by the lesson page so the board has room.
+ */
 export function PageShell({
   children,
-  wide = false,
   actions,
-  className,
-}: PageShellProps) {
+  wide = false,
+}: {
+  children: ReactNode;
+  actions?: ReactNode;
+  wide?: boolean;
+}) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b border-stone-200 bg-white/80 backdrop-blur">
+    <div className="min-h-screen bg-stone-50 text-stone-900">
+      <header className="border-b border-stone-200 bg-white">
         <div
           className={cn(
-            "mx-auto flex h-14 items-center justify-between px-4 sm:px-6",
-            wide ? "max-w-6xl" : "max-w-3xl",
+            "mx-auto flex items-center justify-between px-4 py-3",
+            wide ? "max-w-5xl" : "max-w-3xl",
           )}
         >
-          <Link
-            href="/"
-            className="text-sm font-semibold tracking-tight text-teal-900"
-          >
+          <Link href="/" className="text-sm font-semibold text-teal-900">
             Visual AI Tutor
           </Link>
-          {actions ? (
-            <div className="flex items-center gap-2">{actions}</div>
-          ) : null}
+          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
       </header>
-      <main className="flex-1 px-4 py-6 sm:px-6">
-        <div
-          className={cn(
-            "mx-auto",
-            wide ? "max-w-6xl" : "max-w-3xl",
-            className,
-          )}
-        >
-          {children}
-        </div>
+      <main
+        className={cn(
+          "mx-auto px-4 py-8",
+          wide ? "max-w-5xl" : "max-w-3xl",
+        )}
+      >
+        {children}
       </main>
     </div>
   );

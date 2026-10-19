@@ -4,6 +4,8 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { gradeBinomialExpansion } from "@/lib/grading/algebra";
 import { runQuizCoach } from "@/lib/ai/quizCoach";
 import { getQuizItem } from "@/lib/packs/binomial_square";
+import { toErrorResponse } from "@/lib/apiError";
+import { requireOwnedSession } from "@/lib/routes/sessionGuard";
 
 const requestSchema = z.object({
   session_id: z.string().uuid(),
@@ -33,6 +35,9 @@ export async function handleQuizExplain(request: Request) {
     }
 
     const { session_id, item_seed, answer, language, explain } = parsed.data;
+
+    const denied = await requireOwnedSession(supabase, session_id, user.id);
+    if (denied) return denied;
 
     const item = getQuizItem(item_seed);
     if (!item) {
@@ -100,9 +105,6 @@ export async function handleQuizExplain(request: Request) {
       explanation,
     });
   } catch (error) {
-    console.error("Quiz explain handler error:", error);
-    const message =
-      error instanceof Error ? error.message : "Quiz grading failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error, "Quiz grading failed");
   }
 }

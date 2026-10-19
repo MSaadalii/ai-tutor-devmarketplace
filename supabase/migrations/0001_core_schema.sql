@@ -130,7 +130,11 @@ create trigger set_updated_at before update on public.board_states
   for each row execute function public.set_updated_at();
 
 -- ── Row Level Security: strict per-account isolation (SPEC M3) ───────────────
--- One policy per table covering all operations: owners only.
+-- Owner-only select/insert/update/delete per table. Child rows (attempts,
+-- board_states, narration_steps, model_runs, quiz_results, lesson_summaries,
+-- activity_events) must ALSO point at a learning_session owned by auth.uid(),
+-- so account B can never attach rows to account A's session.
+-- Idempotent: re-running replaces the earlier broad `owner_all` policies.
 
 alter table public.learning_sessions enable row level security;
 alter table public.attempts enable row level security;
@@ -141,34 +145,78 @@ alter table public.quiz_results enable row level security;
 alter table public.lesson_summaries enable row level security;
 alter table public.activity_events enable row level security;
 
+-- learning_sessions: the root of ownership.
 drop policy if exists owner_all on public.learning_sessions;
-create policy owner_all on public.learning_sessions
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists learning_sessions_select on public.learning_sessions;
+drop policy if exists learning_sessions_insert on public.learning_sessions;
+drop policy if exists learning_sessions_update on public.learning_sessions;
+drop policy if exists learning_sessions_delete on public.learning_sessions;
 
-drop policy if exists owner_all on public.attempts;
-create policy owner_all on public.attempts
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy learning_sessions_select on public.learning_sessions
+  for select to authenticated using (auth.uid() = user_id);
+create policy learning_sessions_insert on public.learning_sessions
+  for insert to authenticated with check (auth.uid() = user_id);
+create policy learning_sessions_update on public.learning_sessions
+  for update to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy learning_sessions_delete on public.learning_sessions
+  for delete to authenticated using (auth.uid() = user_id);
 
-drop policy if exists owner_all on public.board_states;
-create policy owner_all on public.board_states
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Child tables that always have a session_id.
+do $
+declare
+  t text;
+  parent_ok constant text :=
+    'auth.uid() = user_id and exists (select 1 from public.learning_sessions s '
+    'where s.id = session_id and s.user_id = auth.uid())';
+begin
+  foreach t in array array[
+    'attempts', 'board_states', 'narration_steps',
+    'model_runs', 'quiz_results', 'lesson_summaries'
+  ] loop
+    execute format('drop policy if exists owner_all on public.%I', t);
+    execute format('drop policy if exists %I on public.%I', t || '_select', t);
+    execute format('drop policy if exists %I on public.%I', t || '_insert', t);
+    execute format('drop policy if exists %I on public.%I', t || '_update', t);
+    execute format('drop policy if exists %I on public.%I', t || '_delete', t);
 
-drop policy if exists owner_all on public.narration_steps;
-create policy owner_all on public.narration_steps
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+    execute format(
+      'create policy %I on public.%I for select to authenticated using (auth.uid() = user_id)',
+      t || '_select', t);
+    execute format(
+      'create policy %I on public.%I for insert to authenticated with check (' || parent_ok || ')',
+      t || '_insert', t);
+    execute format(
+      'create policy %I on public.%I for update to authenticated using (auth.uid() = user_id) with check (' || parent_ok || ')',
+      t || '_update', t);
+    execute format(
+      'create policy %I on public.%I for delete to authenticated using (auth.uid() = user_id)',
+      t || '_delete', t);
+  end loop;
+end $;
 
-drop policy if exists owner_all on public.model_runs;
-create policy owner_all on public.model_runs
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists owner_all on public.quiz_results;
-create policy owner_all on public.quiz_results
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists owner_all on public.lesson_summaries;
-create policy owner_all on public.lesson_summaries
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
+-- activity_events: session_id is optional, but if present it must be owned.
 drop policy if exists owner_all on public.activity_events;
-create policy owner_all on public.activity_events
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists activity_events_select on public.activity_events;
+drop policy if exists activity_events_insert on public.activity_events;
+drop policy if exists activity_events_update on public.activity_events;
+drop policy if exists activity_events_delete on public.activity_events;
+
+create policy activity_events_select on public.activity_events
+  for select to authenticated using (auth.uid() = user_id);
+create policy activity_events_insert on public.activity_events
+  for insert to authenticated with check (
+    auth.uid() = user_id and (
+      session_id is null or exists (
+        select 1 from public.learning_sessions s
+        where s.id = session_id and s.user_id = auth.uid())));
+create policy activity_events_update on public.activity_events
+  for update to authenticated
+  using (auth.uid() = user_id)
+  with check (
+    auth.uid() = user_id and (
+      session_id is null or exists (
+        select 1 from public.learning_sessions s
+        where s.id = session_id and s.user_id = auth.uid())));
+create policy activity_events_delete on public.activity_events
+  for delete to authenticated using (auth.uid() = user_id);
