@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { toErrorResponse } from "@/lib/apiError";
+import { requireOwnedSession } from "@/lib/routes/sessionGuard";
 import { gradeBoardTask } from "@/lib/grading/algebra";
 import { getPack } from "@/lib/packs/binomial_square";
 
@@ -30,6 +32,9 @@ export async function POST(request: Request) {
     }
 
     const { session_id, selected_element_ids, language } = parsed.data;
+
+    const denied = await requireOwnedSession(supabase, session_id, user.id);
+    if (denied) return denied;
     const pack = getPack();
     const grade = gradeBoardTask(
       pack.boardTaskElementIds,
@@ -67,9 +72,6 @@ export async function POST(request: Request) {
       message: grade.message,
     });
   } catch (error) {
-    console.error("Board task route error:", error);
-    const message =
-      error instanceof Error ? error.message : "Board task grading failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error, "Board task grading failed");
   }
 }

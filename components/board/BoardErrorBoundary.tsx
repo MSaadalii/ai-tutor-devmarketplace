@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ReactNode } from "react";
 
 /** Converts a renderer crash into the same fallback path as a load failure. */
 export class BoardErrorBoundary extends Component<
@@ -13,7 +13,7 @@ export class BoardErrorBoundary extends Component<
     return { failed: true };
   }
 
-  componentDidCatch(error: Error, _info: ErrorInfo) {
+  componentDidCatch(error: Error) {
     this.props.onError(error.message || "Board renderer failed");
   }
 

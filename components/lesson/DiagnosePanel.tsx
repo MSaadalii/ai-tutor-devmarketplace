@@ -15,13 +15,11 @@ export function DiagnosePanel({
   onDiagnose,
   diagnosis,
   probeAnswers,
-  onProbeAnswersChange,
 }: {
   problem: string;
   onDiagnose: (answer: string, probeAnswers: string[]) => Promise<void>;
   diagnosis: Diagnosis | null;
   probeAnswers: string[];
-  onProbeAnswersChange: (answers: string[]) => void;
 }) {
   const [answer, setAnswer] = useState("");
   const [currentProbeAnswer, setCurrentProbeAnswer] = useState("");
@@ -36,9 +34,9 @@ export function DiagnosePanel({
     setLoading(true);
     if (activeProbe) {
       const nextAnswers = [...probeAnswers, currentProbeAnswer];
-      onProbeAnswersChange(nextAnswers);
-      setCurrentProbeAnswer("");
+      // The parent commits the probe answers only after the API call succeeds.
       await onDiagnose(answer, nextAnswers);
+      setCurrentProbeAnswer("");
     } else {
       await onDiagnose(answer, probeAnswers);
     }

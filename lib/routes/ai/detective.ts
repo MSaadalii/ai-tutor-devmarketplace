@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { runDetective } from "@/lib/ai/detective";
+import { toErrorResponse } from "@/lib/apiError";
+import { requireOwnedSession } from "@/lib/routes/sessionGuard";
 import type { DetectiveOutcome } from "@/types";
 
 const requestSchema = z.object({
@@ -31,6 +33,13 @@ export async function handleDetective(request: Request) {
         { status: 400 },
       );
     }
+
+    const denied = await requireOwnedSession(
+      supabase,
+      parsed.data.session_id,
+      user.id,
+    );
+    if (denied) return denied;
 
     const {
       session_id,
@@ -87,9 +96,6 @@ export async function handleDetective(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Detective handler error:", error);
-    const message =
-      error instanceof Error ? error.message : "Diagnosis failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return toErrorResponse(error, "Diagnosis failed");
   }
 }
