@@ -131,7 +131,7 @@ function ExcalidrawCanvas({
   selectedElementIds = [],
   currentStepIndex = -1,
 }: Omit<ExcalidrawBoardProps, "onError"> & {
-  Component: ComponentType<unknown>;
+  Component: ComponentType<Record<string, unknown>>;
 }) {
   const apiRef = useRef<ExcalidrawApi | null>(null);
   const prevSelectedRef = useRef<string[]>(selectedElementIds);

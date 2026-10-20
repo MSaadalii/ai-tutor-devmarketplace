@@ -45,12 +45,14 @@ export function SvgBoard({
   );
 
   return (
-    <div className="relative w-full">
+    <div 
+      className="relative w-full" 
+      dir={language === "ur" ? "rtl" : "ltr"}
+    >
       <style>{PULSE_STYLE}</style>
       <svg
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         className="h-auto w-full rounded-lg border border-stone-200 bg-white"
-        dir={language === "ur" ? "rtl" : "ltr"}
         role="img"
         aria-label="Area model whiteboard"
       >
