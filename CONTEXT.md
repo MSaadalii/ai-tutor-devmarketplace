@@ -3,6 +3,14 @@
 Read this first in every new chat before touching code.
 
 ## Last update
+**Phase 2 (blank-board fix) — seeded ops merge.** Teach mode only; answer mode unchanged.
+- New `lib/ai/teachMerge.ts`: `mergeTeachSteps(geminiSteps, pack, language)` runs in `runBoardTutor` after the Gemini teach response validates, before return.
+- Seeded script from `pack.areaModel.regionIds`: 0 highlight a2; 1 highlight ab1; 2 highlight ab2; 3 highlight b2; 4 update_label `result_label` = `x^2 + 6x + 9`; 5 highlight ab1.
+- Per step i: `spokenLine` = Gemini's or `pack.narrationSeeds[language][i]`; `language` from the request; operation = Gemini's only if payload has real fields (valid known `elementId` for highlight/clear_highlight/update_label(+text); `text`+`x`+`y` for add_text; `elementId` for add_shape), else the seeded op. highlight/clear_highlight/update_label never ship without `payload.elementId`. Output is always steps 0..5.
+- SVG remains the default board; `buildSceneFromSteps` still starts from `buildAreaModelScene`.
+- Not built/run in this workspace — run `npm run build` first. No auth/quiz/schema changes.
+
+## Previous update
 **Phase 4 Complete** — Per-step operation coercion added (bare string → object):
 
 1. **`lib/ai/schemas.ts`** — `narrationStepSchema` now wrapped in `z.preprocess` that calls `coerceOperation()` on each step before Zod validates it. `coerceOperation` handles three cases:
