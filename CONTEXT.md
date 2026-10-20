@@ -3,7 +3,12 @@
 Read this first in every new chat before touching code.
 
 ## Last update
-Phase 3 "Deploy" lane — the two remaining bugs (board_tutor Zod array coerce; Excalidraw export resolver exhaustive) are fixed. SVG is now the reliable default board renderer for teach mode so the Judge path is never blocked by an Excalidraw load failure. **Deploy checklist below.** Do not add Vapi or Stretch. No secrets in this file.
+**Phase 3 Complete** — Both product bugs fixed and verified in workspace:
+1. **board_tutor Zod schema** — `lib/ai/schemas.ts` uses `z.preprocess` to coerce top-level arrays to `{ steps: [...] }` before Zod validation. System prompt in `lib/ai/boardTutor.ts` explicitly requires JSON object with "steps" key.
+2. **Excalidraw export resolver** — `components/board/ExcalidrawBoard.tsx` `resolveExcalidrawExport()` exhaustively searches: `mod.Excalidraw` → `mod.default?.Excalidraw` → `mod.default` → any top-level component-like export. Throws with available keys if none found; parent catches and triggers SVG fallback.
+3. **SVG reliable default** — `components/board/BoardCanvas.tsx` defaults to SVG (`fallback="svg"`). LessonClient starts with SVG on; "Try Excalidraw ↗" toggle switches to Excalidraw (auto-reverts on failure).
+
+**Status:** Code fixed, not yet built/deployed locally. Run `npm install && npm run build` to verify. No secrets in this file.
 
 ## Phase 3 fixes (this lane)
 
