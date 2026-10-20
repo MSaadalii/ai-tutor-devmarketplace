@@ -84,14 +84,25 @@ export function ExcalidrawBoard({
     );
   }
 
-  return <ExcalidrawCanvas Component={ExcalidrawComponent} convertElements={convertElements} {...props} />;
+  return <ExcalidrawCanvas Component={ExcalidrawComponent} convertElements={convertElements} onError={onError} {...props} />;
 }
 
 
 type ConvertElements = typeof import("@excalidraw/excalidraw").convertToExcalidrawElements;
+type ExcalidrawAppState = ReturnType<typeof toExcalidrawScene>["appState"] & {
+  zoom: { value: number };
+  scrollX: number;
+  scrollY: number;
+};
 type ExcalidrawApi = {
-  updateScene: (scene: { elements: ReturnType<ConvertElements> }) => void;
-  scrollToContent?: (elements: ReturnType<ConvertElements>) => void;
+  updateScene: (scene: {
+    elements: ReturnType<ConvertElements>;
+    appState: ExcalidrawAppState;
+  }) => void;
+  scrollToContent?: (
+    elements: ReturnType<ConvertElements>,
+    options?: { fitToContent: boolean },
+  ) => void;
 };
 
 function isComponentLike(value: unknown): value is ComponentType<unknown> {
@@ -142,7 +153,8 @@ function ExcalidrawCanvas({
   onElementClick,
   selectedElementIds = [],
   currentStepIndex = -1,
-}: Omit<ExcalidrawBoardProps, "onError"> & {
+  onError,
+}: ExcalidrawBoardProps & {
   Component: ComponentType<Record<string, unknown>>;
   convertElements: ConvertElements;
 }) {
@@ -158,20 +170,36 @@ function ExcalidrawCanvas({
     const skeletonScene = toExcalidrawScene(scene, language, selectedElementIds);
     return {
       ...skeletonScene,
-      elements: convertElements(skeletonScene.elements),
+      elements: convertElements(skeletonScene.elements, { regenerateIds: false }),
+      appState: {
+        ...skeletonScene.appState,
+        zoom: { value: 1 },
+        scrollX: 0,
+        scrollY: 0,
+      },
       scrollToContent: true,
     };
   }, [scene, language, selectedElementIds, convertElements]);
 
   useEffect(() => {
+    const { elements, appState } = excalidrawScene;
+    if (elements.length === 0) {
+      onError?.("empty scene");
+      return;
+    }
     if (!api) return;
-    const { elements } = excalidrawScene;
-    api.updateScene({ elements });
-    // Wait for the canvas layout before fitting, including when API readiness
-    // occurs after the initial scene effect. Cancel stale fits on step changes.
-    const frame = requestAnimationFrame(() => api.scrollToContent?.(elements));
+    api.updateScene({ elements, appState });
+    // Fit after layout, both on API readiness and on scene/step changes.
+    // Older APIs may reject the options argument; retry their single-arg form.
+    const frame = requestAnimationFrame(() => {
+      try {
+        api.scrollToContent?.(elements, { fitToContent: true });
+      } catch {
+        api.scrollToContent?.(elements);
+      }
+    });
     return () => cancelAnimationFrame(frame);
-  }, [api, excalidrawScene, currentStepIndex]);
+  }, [api, excalidrawScene, currentStepIndex, onError]);
 
   // Excalidraw reports selection in appState.selectedElementIds (not on elements).
   const handleChange = (
@@ -198,6 +226,7 @@ function ExcalidrawCanvas({
   return (
     <div className="relative w-full">
       <div className="h-[420px] w-full overflow-hidden rounded-lg border border-stone-200 bg-white">
+        <div style={{ height: "100%", width: "100%" }}>
         <Component
           initialData={excalidrawScene}
           excalidrawAPI={handleApiReady}
@@ -216,6 +245,7 @@ function ExcalidrawCanvas({
           }}
           langCode={language === "ur" ? "ar-SA" : "en-US"}
         />
+        </div>
       </div>
       {currentStepIndex >= 0 && (
         <div className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs text-stone-600 shadow">

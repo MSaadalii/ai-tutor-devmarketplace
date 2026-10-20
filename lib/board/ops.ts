@@ -350,24 +350,25 @@ export function toExcalidrawScene(
       continue;
     }
 
-    elements.push({ ...base, type: "rectangle", width: el.width, height: el.height });
-    // Rectangle props cannot render text. Give each region a separate, stable
-    // label ID; lock labels so clicks still select the underlying region.
+    // The converter creates bound text for the rectangle while retaining its
+    // region ID, so highlights and task selections still target the region.
     const text = el.text ?? el.label ?? "";
-    if (text) {
-      elements.push({
-        id: `${el.id}_label`,
-        type: "text",
-        x: el.x + el.width / 2 - text.length * fontSize * 0.3,
-        y: el.y + el.height / 2 - fontSize / 2,
-        text,
-        fontSize,
-        fontFamily: 1,
-        strokeColor: COLORS.label,
-        textAlign: "center",
-        locked: true,
-      });
-    }
+    elements.push({
+      ...base,
+      type: "rectangle",
+      width: el.width,
+      height: el.height,
+      ...(text ? {
+        label: {
+          text,
+          textAlign: "center" as const,
+          verticalAlign: "middle" as const,
+          fontSize,
+          fontFamily: 1,
+          strokeColor: COLORS.label,
+        },
+      } : {}),
+    });
   }
 
   // Language is kept in this adapter's interface for both board renderers.

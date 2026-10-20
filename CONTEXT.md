@@ -2,7 +2,7 @@
 
 Read this first in every new chat before touching code.
 
-Phase 5: Optional Excalidraw now converts rectangle + separate label skeletons before initialData/updateScene and fits content on API readiness and scene/step changes, preserving highlights, SVG default/toggle and automatic fallback; no deploy/Stretch; build and click verification not run (no shell tool).
+Phase 6: Optional Excalidraw conversion now uses `{ regenerateIds: false }` to preserve region IDs/highlights and centered bound rectangle labels (superseding Phase 5's separate region-label nodes). The canvas root fills the existing 420px wrapper; initialData includes converted elements, white background, zoom 1, scrollX/Y 0 and scrollToContent. API readiness and scene/step changes update elements + appState, then fit content after layout, retrying without options if unsupported. Empty converted scenes call onError("empty scene") for SVG fallback. SVG default, manual toggle and automatic fallback remain unchanged; no remount key, deploy, Vapi or Stretch. Build/click verification not run (no shell/browser tool). Next: human verifies Start → Diagnose → Play → Try Excalidraw displays the labeled area model and successive highlights, then Use SVG board still works.
 
 ## Last update (Phase 4 — Core board-tutor resilience)
 **Status:** Phase 4 complete in code; build/click verification still needs to be run.
