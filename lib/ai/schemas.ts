@@ -31,9 +31,13 @@ export const boardOperationSchema: z.ZodType<BoardOperation> = z.object({
  *   - A fully-formed object: { type: "add_text", payload: { ... } }
  *     → leave unchanged
  */
-function coerceOperation(raw: unknown): unknown {
+function coerceOperation(raw: unknown, stepPayload?: unknown): unknown {
   if (typeof raw === "string") {
-    return { type: raw, payload: {} };
+    const payload =
+      stepPayload && typeof stepPayload === "object" && !Array.isArray(stepPayload)
+        ? stepPayload
+        : {};
+    return { type: raw, payload };
   }
   if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
     const op = raw as Record<string, unknown>;
@@ -49,7 +53,7 @@ export const narrationStepSchema: z.ZodType<NarrationStep> = z.preprocess(
   (raw) => {
     if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
       const step = raw as Record<string, unknown>;
-      return { ...step, operation: coerceOperation(step.operation) };
+      return { ...step, operation: coerceOperation(step.operation, step.payload) };
     }
     return raw;
   },

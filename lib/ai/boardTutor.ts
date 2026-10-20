@@ -4,6 +4,7 @@ import {
 } from "@/lib/ai/schemas";
 import { callGeminiJson, type GeminiRole } from "@/lib/ai/gemini";
 import { getPack } from "@/lib/packs/binomial_square";
+import { mergeTeachSteps } from "@/lib/ai/teachMerge";
 import type { NarrationStep } from "@/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -63,8 +64,9 @@ export async function runBoardTutor(
     supabase: input.supabase,
   });
 
+  // Deterministic merge: Gemini narration + pack-seeded ops with real payloads.
   return {
-    steps: output.steps,
+    steps: mergeTeachSteps(output.steps, pack, input.language),
     notes: output.notes,
   };
 }
@@ -83,6 +85,7 @@ CRITICAL RULE 2 — operation field:
   Correct:   "operation": { "type": "add_text", "payload": { "x": 10, "y": 20, "text": "x²" } }
   Incorrect: "operation": "add_text"
 
+Root shape is exactly { "steps": [...], "notes"?: string }.
 Return at most 6 steps inside the "steps" array. Each step has:
 - order: 0-based integer
 - operation: { "type": <one of add_text|add_shape|update_label|highlight|clear_highlight>, "payload": { ... } }
@@ -124,7 +127,7 @@ ${languageNote}
 
 RESPONSE RULES (both are mandatory):
 1. Respond with a JSON OBJECT that has the key "steps" (array of up to 6 board steps).
-   Do NOT return a top-level JSON array — always wrap steps inside {"steps": [...]}.
+   Do NOT return a top-level JSON array — the root MUST be {"steps": [...], "notes"?: string}.
 2. Each step's "operation" MUST be a JSON object { "type": "...", "payload": { ... } }.
    NEVER use a bare string for operation (e.g. "add_text" is WRONG; use {"type":"add_text","payload":{...}}).
 `;
