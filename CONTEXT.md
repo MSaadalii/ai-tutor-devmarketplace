@@ -2,6 +2,8 @@
 
 Read this first in every new chat before touching code.
 
+Phase 5: Optional Excalidraw now converts rectangle + separate label skeletons before initialData/updateScene and fits content on API readiness and scene/step changes, preserving highlights, SVG default/toggle and automatic fallback; no deploy/Stretch; build and click verification not run (no shell tool).
+
 ## Last update (Phase 4 — Core board-tutor resilience)
 **Status:** Phase 4 complete in code; build/click verification still needs to be run.
 

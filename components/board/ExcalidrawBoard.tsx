@@ -2,6 +2,7 @@
 
 import "@excalidraw/excalidraw/index.css";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -34,6 +35,9 @@ export function ExcalidrawBoard({
 }: ExcalidrawBoardProps) {
   const [ExcalidrawComponent, setExcalidrawComponent] =
     useState<ComponentType<unknown> | null>(null);
+  const [convertElements, setConvertElements] = useState<
+    typeof import("@excalidraw/excalidraw").convertToExcalidrawElements | null
+  >(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +48,11 @@ export function ExcalidrawBoard({
         // resolveExcalidrawExport now throws with a detailed message if it
         // cannot find a component-like export.
         const Comp = resolveExcalidrawExport(mod);
+        const { convertToExcalidrawElements } = mod;
+        if (typeof convertToExcalidrawElements !== "function") {
+          throw new Error("Excalidraw scene converter not found");
+        }
+        setConvertElements(() => convertToExcalidrawElements);
         setExcalidrawComponent(() => Comp);
       })
       .catch((e) => {
@@ -67,7 +76,7 @@ export function ExcalidrawBoard({
     );
   }
 
-  if (!ExcalidrawComponent) {
+  if (!ExcalidrawComponent || !convertElements) {
     return (
       <div className="flex min-h-[360px] items-center justify-center rounded-lg border border-stone-200 bg-white text-sm text-stone-500">
         Loading Excalidraw…
@@ -75,12 +84,14 @@ export function ExcalidrawBoard({
     );
   }
 
-  return <ExcalidrawCanvas Component={ExcalidrawComponent} {...props} />;
+  return <ExcalidrawCanvas Component={ExcalidrawComponent} convertElements={convertElements} {...props} />;
 }
 
 
+type ConvertElements = typeof import("@excalidraw/excalidraw").convertToExcalidrawElements;
 type ExcalidrawApi = {
-  updateScene: (scene: Record<string, unknown>) => void;
+  updateScene: (scene: { elements: ReturnType<ConvertElements> }) => void;
+  scrollToContent?: (elements: ReturnType<ConvertElements>) => void;
 };
 
 function isComponentLike(value: unknown): value is ComponentType<unknown> {
@@ -125,6 +136,7 @@ export function resolveExcalidrawExport(
 
 function ExcalidrawCanvas({
   Component,
+  convertElements,
   scene,
   language = "en",
   onElementClick,
@@ -132,24 +144,34 @@ function ExcalidrawCanvas({
   currentStepIndex = -1,
 }: Omit<ExcalidrawBoardProps, "onError"> & {
   Component: ComponentType<Record<string, unknown>>;
+  convertElements: ConvertElements;
 }) {
-  const apiRef = useRef<ExcalidrawApi | null>(null);
+  const [api, setApi] = useState<ExcalidrawApi | null>(null);
+  const handleApiReady = useCallback((readyApi: ExcalidrawApi) => setApi(readyApi), []);
   const prevSelectedRef = useRef<string[]>(selectedElementIds);
 
   useEffect(() => {
     prevSelectedRef.current = selectedElementIds;
   }, [selectedElementIds]);
 
-  const excalidrawScene = useMemo(
-    () => toExcalidrawScene(scene, language, selectedElementIds),
-    [scene, language, selectedElementIds],
-  );
+  const excalidrawScene = useMemo(() => {
+    const skeletonScene = toExcalidrawScene(scene, language, selectedElementIds);
+    return {
+      ...skeletonScene,
+      elements: convertElements(skeletonScene.elements),
+      scrollToContent: true,
+    };
+  }, [scene, language, selectedElementIds, convertElements]);
 
   useEffect(() => {
-    if (apiRef.current) {
-      apiRef.current.updateScene(excalidrawScene);
-    }
-  }, [excalidrawScene]);
+    if (!api) return;
+    const { elements } = excalidrawScene;
+    api.updateScene({ elements });
+    // Wait for the canvas layout before fitting, including when API readiness
+    // occurs after the initial scene effect. Cancel stale fits on step changes.
+    const frame = requestAnimationFrame(() => api.scrollToContent?.(elements));
+    return () => cancelAnimationFrame(frame);
+  }, [api, excalidrawScene, currentStepIndex]);
 
   // Excalidraw reports selection in appState.selectedElementIds (not on elements).
   const handleChange = (
@@ -178,9 +200,7 @@ function ExcalidrawCanvas({
       <div className="h-[420px] w-full overflow-hidden rounded-lg border border-stone-200 bg-white">
         <Component
           initialData={excalidrawScene}
-          excalidrawAPI={(api: ExcalidrawApi) => {
-            apiRef.current = api;
-          }}
+          excalidrawAPI={handleApiReady}
           onChange={handleChange}
           viewModeEnabled={false}
           zenModeEnabled={false}

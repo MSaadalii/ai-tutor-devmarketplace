@@ -313,70 +313,67 @@ export function buildSceneFromSteps(
   return scene;
 }
 
-/**
- * Convert a BoardScene to Excalidraw scene JSON.
- */
+// Type-only reference keeps the optional renderer out of the SVG/server bundle.
+type ExcalidrawSkeletons = Parameters<
+  typeof import("@excalidraw/excalidraw").convertToExcalidrawElements
+>[0];
+
+/** Build skeletons; the optional client renderer converts them to full elements. */
 export function toExcalidrawScene(
   scene: BoardScene,
   language: AppLanguage = "en",
   selectedElementIds: string[] = [],
-): Record<string, unknown> {
-  const excalidrawElements = scene.elements.map((el) => {
+) {
+  const elements: ExcalidrawSkeletons = [];
+  for (const el of scene.elements) {
+    const highlighted = scene.highlights.includes(el.id);
     const base = {
       id: el.id,
       x: el.x,
       y: el.y,
-      strokeColor: el.strokeColor ?? COLORS.default,
-      backgroundColor: el.backgroundColor ?? "transparent",
-      fillStyle: el.fillStyle ?? "solid",
-      strokeWidth: el.strokeWidth ?? 2,
-      strokeStyle: "solid",
+      strokeColor: highlighted ? COLORS.highlight : el.strokeColor ?? COLORS.default,
+      backgroundColor: highlighted ? COLORS.highlightBg : el.backgroundColor ?? "transparent",
+      fillStyle: "solid" as const,
+      strokeWidth: highlighted ? HIGHLIGHT_STROKE_WIDTH : el.strokeWidth ?? 2,
       roughness: el.roughness ?? 1,
-      opacity: 100,
-      groupIds: [],
-      frameId: null,
-      roundness: { type: 3 },
-      boundElements: null,
-      updated: Date.now(),
-      locked: false, // locked elements cannot be selected, which breaks tap-to-select
-      angle: 0,
-      seed: Math.floor(Math.random() * 1000000),
-      version: 1,
-      versionNonce: Math.floor(Math.random() * 1000000),
-      isDeleted: false,
     };
-
+    const fontSize = el.fontSize ?? FONT_SIZE;
     if (el.type === "text") {
-      return {
+      elements.push({
         ...base,
         type: "text",
-        width: el.width,
-        height: el.height,
-        text: wrapTextForExcalidraw(el.text ?? ""),
-        fontSize: el.fontSize ?? FONT_SIZE,
+        text: el.text ?? "",
+        fontSize,
         fontFamily: 1,
         textAlign: "left",
-        verticalAlign: "top",
-        baseline: 18,
-      };
+      });
+      continue;
     }
 
-    return {
-      ...base,
-      type: el.type === "square" ? "rectangle" : "rectangle",
-      width: el.width,
-      height: el.height,
-      text: wrapTextForExcalidraw(el.text ?? ""),
-      fontSize: el.fontSize ?? FONT_SIZE,
-      fontFamily: 1,
-      textAlign: "center",
-      verticalAlign: "middle",
-      baseline: 18,
-    };
-  });
+    elements.push({ ...base, type: "rectangle", width: el.width, height: el.height });
+    // Rectangle props cannot render text. Give each region a separate, stable
+    // label ID; lock labels so clicks still select the underlying region.
+    const text = el.text ?? el.label ?? "";
+    if (text) {
+      elements.push({
+        id: `${el.id}_label`,
+        type: "text",
+        x: el.x + el.width / 2 - text.length * fontSize * 0.3,
+        y: el.y + el.height / 2 - fontSize / 2,
+        text,
+        fontSize,
+        fontFamily: 1,
+        strokeColor: COLORS.label,
+        textAlign: "center",
+        locked: true,
+      });
+    }
+  }
 
+  // Language is kept in this adapter's interface for both board renderers.
+  void language;
   return {
-    elements: excalidrawElements,
+    elements,
     appState: {
       viewBackgroundColor: "#ffffff",
       currentItemFontFamily: 1,
@@ -391,11 +388,6 @@ export function toExcalidrawScene(
     },
     files: {},
   };
-}
-
-function wrapTextForExcalidraw(text: string): string {
-  // Excalidraw expects raw text; no HTML. Equations stay Latin.
-  return text;
 }
 
 /**
