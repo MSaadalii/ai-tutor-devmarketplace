@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import type { NarrationStep, AppLanguage } from "@/types";
@@ -23,8 +23,8 @@ export type BoardCanvasProps = {
   taskMode?: boolean;
   language?: AppLanguage;
   /**
-   * "excalidraw" (default): attempt Excalidraw, auto-fall-back to SVG on any
-   *   load error. A small notice is shown and the toggle lets the user retry.
+   * "excalidraw": attempt Excalidraw, auto-fall-back to SVG on load/paint
+   *   failure. A small notice is shown and the toggle lets the user retry.
    * "svg": use SVG directly (reliable path; also used as the automatic fallback).
    *
    * SVG is the reliable default for the teach flow so the Judge path is never
@@ -35,7 +35,7 @@ export type BoardCanvasProps = {
 };
 
 /**
- * BoardCanvas — Excalidraw canvas with automatic SVG fallback.
+ * BoardCanvas — optional Excalidraw canvas with automatic SVG fallback.
  *
  * Teach-mode strategy:
  *   • LessonClient starts with fallback="svg" so the board always works.
@@ -58,6 +58,7 @@ export function BoardCanvas({
   children,
 }: BoardCanvasProps) {
   const [excalidrawFailed, setExcalidrawFailed] = useState(false);
+  const [excalidrawPainted, setExcalidrawPainted] = useState(false);
   const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
   // Choosing Excalidraw again (manual toggle) resets the failure state so the
@@ -65,9 +66,26 @@ export function BoardCanvas({
   useEffect(() => {
     if (fallback === "excalidraw") {
       setExcalidrawFailed(false);
+      setExcalidrawPainted(false);
       setFailureMessage(null);
     }
   }, [fallback]);
+
+  // Avoid treating Excalidraw's initialization delay as a failure. A canvas
+  // with measurable dimensions is a soft paint confirmation; only fall back
+  // after a generous wait if it never appears.
+  useEffect(() => {
+    if (fallback !== "excalidraw" || excalidrawFailed || excalidrawPainted) return;
+    const timeout = window.setTimeout(() => {
+      setFailureMessage("Excalidraw canvas did not become visible in time");
+      setExcalidrawFailed(true);
+    }, 8000);
+    return () => window.clearTimeout(timeout);
+  }, [fallback, excalidrawFailed, excalidrawPainted]);
+
+  const markExcalidrawPainted = useCallback(() => {
+    setExcalidrawPainted(true);
+  }, []);
 
   const scene = useMemo(
     () => buildSceneFromSteps(steps, currentStepIndex),
@@ -114,6 +132,7 @@ export function BoardCanvas({
           <ExcalidrawBoard
             {...commonProps}
             onError={handleRendererFailure}
+            onPainted={markExcalidrawPainted}
           />
         </BoardErrorBoundary>
       )}

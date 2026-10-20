@@ -1,6 +1,5 @@
 "use client";
 
-import "@excalidraw/excalidraw/index.css";
 import {
   useCallback,
   useEffect,
@@ -21,6 +20,7 @@ export type ExcalidrawBoardProps = {
   selectedElementIds?: string[];
   currentStepIndex?: number;
   onError?: (error: string) => void;
+  onPainted?: () => void;
 };
 
 /**
@@ -107,7 +107,7 @@ type ExcalidrawApi = {
 
 function isComponentLike(value: unknown): value is ComponentType<unknown> {
   if (typeof value === "function") return true;
-  // React.memo / forwardRef exports are objects tagged with $typeof.
+  // React.memo / forwardRef exports use the $typeof symbol marker.
   return typeof value === "object" && value !== null && "$typeof" in value;
 }
 
@@ -130,7 +130,9 @@ export function resolveExcalidrawExport(
   const def = (m.default ?? {}) as Record<string, unknown>;
 
   // Prioritised candidates.
-  const prioritised: unknown[] = [m.Excalidraw, def.Excalidraw, m.default];
+  if (m.Excalidraw != null) return m.Excalidraw as ComponentType<unknown>;
+
+  const prioritised: unknown[] = [def.Excalidraw, m.default];
   const found = prioritised.find(isComponentLike);
   if (found) return found as ComponentType<unknown>;
 
@@ -154,11 +156,13 @@ function ExcalidrawCanvas({
   selectedElementIds = [],
   currentStepIndex = -1,
   onError,
+  onPainted,
 }: ExcalidrawBoardProps & {
   Component: ComponentType<Record<string, unknown>>;
   convertElements: ConvertElements;
 }) {
   const [api, setApi] = useState<ExcalidrawApi | null>(null);
+  const canvasRootRef = useRef<HTMLDivElement>(null);
   const handleApiReady = useCallback((readyApi: ExcalidrawApi) => setApi(readyApi), []);
   const prevSelectedRef = useRef<string[]>(selectedElementIds);
 
@@ -188,18 +192,51 @@ function ExcalidrawCanvas({
       return;
     }
     if (!api) return;
-    api.updateScene({ elements, appState });
-    // Fit after layout, both on API readiness and on scene/step changes.
-    // Older APIs may reject the options argument; retry their single-arg form.
-    const frame = requestAnimationFrame(() => {
+
+    // Let Excalidraw finish its initializeScene pass before replacing the scene.
+    // The same delayed path runs on API readiness and on every scene/step change.
+    let frame = 0;
+    const updateTimer = window.setTimeout(() => {
       try {
-        api.scrollToContent?.(elements, { fitToContent: true });
-      } catch {
-        api.scrollToContent?.(elements);
+        api.updateScene({ elements, appState });
+      } catch (error) {
+        onError?.(
+          error instanceof Error ? error.message : "Excalidraw scene update failed",
+        );
+        return;
       }
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [api, excalidrawScene, currentStepIndex, onError]);
+
+      // Fit after the update has painted/layout has settled. Older API versions
+      // may not accept options, so retry with the legacy one-argument call.
+      let paintChecks = 0;
+      const confirmPaint = () => {
+        if (api.scrollToContent && paintChecks === 0) {
+          try {
+            api.scrollToContent(elements, { fitToContent: true });
+          } catch {
+            try {
+              api.scrollToContent(elements);
+            } catch {
+              // Some package versions expose an incompatible fitting API.
+              // Canvas dimensions are still sufficient as a soft paint signal.
+            }
+          }
+        }
+        const canvas = canvasRootRef.current?.querySelector("canvas");
+        if (canvas && canvas.clientWidth >= 40 && canvas.clientHeight >= 40) {
+          onPainted?.();
+          return;
+        }
+        if (++paintChecks < 40) frame = requestAnimationFrame(confirmPaint);
+      };
+      frame = requestAnimationFrame(confirmPaint);
+    }, 220);
+
+    return () => {
+      window.clearTimeout(updateTimer);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [api, excalidrawScene, currentStepIndex, onError, onPainted]);
 
   // Excalidraw reports selection in appState.selectedElementIds (not on elements).
   const handleChange = (
@@ -226,7 +263,7 @@ function ExcalidrawCanvas({
   return (
     <div className="relative w-full">
       <div className="h-[420px] w-full overflow-hidden rounded-lg border border-stone-200 bg-white">
-        <div style={{ height: "100%", width: "100%" }}>
+        <div ref={canvasRootRef} style={{ height: "100%", width: "100%" }}>
         <Component
           initialData={excalidrawScene}
           excalidrawAPI={handleApiReady}
@@ -244,6 +281,7 @@ function ExcalidrawCanvas({
             },
           }}
           langCode={language === "ur" ? "ar-SA" : "en-US"}
+          style={{ height: "100%", width: "100%" }}
         />
         </div>
       </div>
