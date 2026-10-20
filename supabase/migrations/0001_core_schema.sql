@@ -163,7 +163,7 @@ create policy learning_sessions_delete on public.learning_sessions
   for delete to authenticated using (auth.uid() = user_id);
 
 -- Child tables that always have a session_id.
-do $
+do $$
 declare
   t text;
   parent_ok constant text :=
@@ -193,7 +193,7 @@ begin
       'create policy %I on public.%I for delete to authenticated using (auth.uid() = user_id)',
       t || '_delete', t);
   end loop;
-end $;
+end $$;
 
 -- activity_events: session_id is optional, but if present it must be owned.
 drop policy if exists owner_all on public.activity_events;
