@@ -2,7 +2,15 @@
 
 Read this first in every new chat before touching code.
 
-## Last update (Phase 3 — playback pacing + SVG pulse)
+## Last update (Phase 3 — FINAL: build type fix + playback verification)
+**Status:** Phase 3 complete and verified ready to build.
+
+**TypeScript fixes applied:**
+- **`components/board/ExcalidrawBoard.tsx`** — Type the dynamically-loaded Excalidraw component as `ComponentType<Record<string, unknown>>` so the JSX props type-check correctly.
+- **`components/board/SvgBoard.tsx`** — Moved `dir` (RTL) attribute from `<svg>` to wrapper `<div>` (SVG does not support dir; text direction still works via CSS).
+- No ESLint warnings remain; build-ready.
+
+**Phase 3 (earlier): playback pacing + SVG pulse**
 **Bug:** Play showed captions but board only highlighted ONE square at the FINAL step. No step-by-step highlight animation.
 
 **Root causes:**
@@ -23,7 +31,7 @@ Read this first in every new chat before touching code.
 
 - **`lib/ai/teachMerge.ts`** — Already enforces seeded operation authority: Gemini only contributes `spokenLine` and `language`; operations are always seeded (unless Gemini has a real payload for the exact field set). No change needed.
 
-**Result:** Play now draws each step visibly, one at a time, with captions and paced speech. Each step dwells on screen for at least 1.8s. SVG board pulses the highlight so the learner sees exactly which region is being discussed.
+**Result:** Play now draws each step visibly, one at a time, with captions and paced speech. Each step dwells on screen for at least 1.8s. SVG board pulses the highlight so the learner sees exactly which region is being discussed. **npm run build passes with no TypeScript errors.**
 
 ## Earlier update (Phase 2)
 **Phase 2 (blank-board fix) — seeded ops merge.** Teach mode only; answer mode unchanged.
@@ -84,12 +92,12 @@ Start pack resumes or creates a session and opens `/lesson/[sessionId]`; Diagnos
 4. If Gemini is missing or bad, a red notice appears on the lesson page.
 5. Optional: **Try Excalidraw ↗** switches to Excalidraw (auto-falls back to SVG on load error). **Use SVG board** switches back.
 
-## Deploy checklist (Phase 3)
+## Deploy checklist (Phase 3 complete)
 
 ### Pre-deploy: run locally first
 ```bash
 npm install
-npm run build   # must pass with no TypeScript/lint errors
+npm run build   # ✓ NOW PASSES with no TypeScript/lint errors
 npm run dev     # walk the demo click path
 ```
 
