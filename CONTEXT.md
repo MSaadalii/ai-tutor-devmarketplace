@@ -3,6 +3,9 @@
 Read this first in every new chat before touching code.
 
 ## Last update
+**Phase 3 — exclusive step-by-step highlight.** `applyOperation` (`lib/board/ops.ts`) now handles `highlight` exclusively: it first restores every element in `scene.highlights` (original fill/stroke/strokeWidth via `restoreFillColor`, `selected=false`), clears `highlights[]`, then highlights the new target, so only one region pops at a time during Play. Highlight styling is much stronger: yellow fill (`#fde047`), dark amber stroke (`#b45309`), strokeWidth 5 (was subtle teal, 3). `highlight` also accepts optional `payload.elementIds: string[]`; prior highlights are restored once, then all listed ids are highlighted together. Seeded step 5 in `lib/ai/teachMerge.ts` uses `elementIds: [region_ab_1, region_ab_2]` (plus `elementId` for safety); steps 0–3 stay single-region and step 4 stays `update_label result_label "x^2 + 6x + 9"` (revealing the result also clears the region highlight). `hasRealPayload` accepts `elementIds` only if all ids are known and never ships a highlight without an id. No type/schema change was needed (payload is already a free record). Before Play (index < 0) the plain area model shows. Not built/run here — run `npm run build`. No auth/quiz/deploy/Vapi/Excalidraw changes.
+
+## Earlier update (Phase 2)
 **Phase 2 (blank-board fix) — seeded ops merge.** Teach mode only; answer mode unchanged.
 - New `lib/ai/teachMerge.ts`: `mergeTeachSteps(geminiSteps, pack, language)` runs in `runBoardTutor` after the Gemini teach response validates, before return.
 - Seeded script from `pack.areaModel.regionIds`: 0 highlight a2; 1 highlight ab1; 2 highlight ab2; 3 highlight b2; 4 update_label `result_label` = `x^2 + 6x + 9`; 5 highlight ab1.

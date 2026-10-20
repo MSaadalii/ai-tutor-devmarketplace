@@ -37,7 +37,11 @@ export function buildSeededOps(pack: BinomialPack): BoardOperation[] {
       type: "update_label",
       payload: { elementId: RESULT_LABEL_ID, text: RESULT_LABEL_TEXT },
     },
-    { type: "highlight", payload: { elementId: r.ab1 } },
+    // Step 5: both middle terms together (single restore, then both).
+    {
+      type: "highlight",
+      payload: { elementId: r.ab1, elementIds: [r.ab1, r.ab2] },
+    },
   ].slice(0, TEACH_STEP_COUNT) as BoardOperation[];
 }
 
@@ -60,7 +64,17 @@ export function hasRealPayload(
   if (!p || typeof p !== "object") return false;
 
   switch (op.type) {
-    case "highlight":
+    case "highlight": {
+      const idsOk =
+        Array.isArray(p.elementIds) &&
+        p.elementIds.length > 0 &&
+        p.elementIds.every((id) => nonEmptyString(id) && known.has(id));
+      const singleOk = nonEmptyString(p.elementId) && known.has(p.elementId);
+      // elementIds (all known) is accepted; a stray elementId must still be
+      // valid if present, and at least one valid id is always required.
+      if (p.elementIds !== undefined && !idsOk) return false;
+      return idsOk || singleOk;
+    }
     case "clear_highlight":
       return nonEmptyString(p.elementId) && known.has(p.elementId);
     case "update_label":

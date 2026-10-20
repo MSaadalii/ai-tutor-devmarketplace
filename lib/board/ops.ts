@@ -25,8 +25,8 @@ export type BoardScene = {
 
 const COLORS = {
   default: "#1e1e1e",
-  highlight: "#0d9488", // teal-600
-  highlightBg: "#ccfbf1", // teal-100
+  highlight: "#b45309", // amber-700 (dark amber stroke)
+  highlightBg: "#fde047", // yellow-300 (high-contrast fill)
   label: "#44403c", // stone-700
   a2: "#e7e5e4", // stone-200
   ab: "#d6d3d1", // stone-300
@@ -34,6 +34,7 @@ const COLORS = {
 };
 
 const FONT_SIZE = 20;
+const HIGHLIGHT_STROKE_WIDTH = 5;
 
 /**
  * Build the initial area-model board for (a+b)^2.
@@ -220,22 +221,28 @@ export function applyOperation(
       const elementId = String(p.elementId ?? "");
       const el = next.elements.find((e) => e.id === elementId);
       if (el) {
+        // Revealing the result clears the previous region focus.
+        if (elementId === "result_label") restoreHighlights(next);
         el.text = String(p.text ?? el.text ?? "");
         el.label = el.text;
       }
       break;
     }
     case "highlight": {
-      const elementId = String(p.elementId ?? "");
-      const el = next.elements.find((e) => e.id === elementId);
-      if (el) {
-        el.strokeColor = COLORS.highlight;
-        el.backgroundColor = COLORS.highlightBg;
-        el.strokeWidth = 3;
-        el.selected = true;
-      }
-      if (!next.highlights.includes(elementId)) {
-        next.highlights.push(elementId);
+      // Exclusive: restore everything highlighted so far, then highlight the
+      // new target(s). payload.elementIds highlights several in one op.
+      restoreHighlights(next);
+
+      const ids = highlightTargets(p);
+      for (const id of ids) {
+        const el = next.elements.find((e) => e.id === id);
+        if (el) {
+          el.strokeColor = COLORS.highlight;
+          el.backgroundColor = COLORS.highlightBg;
+          el.strokeWidth = HIGHLIGHT_STROKE_WIDTH;
+          el.selected = true;
+        }
+        if (!next.highlights.includes(id)) next.highlights.push(id);
       }
       break;
     }
@@ -254,6 +261,32 @@ export function applyOperation(
   }
 
   return next;
+}
+
+/** Restore original fill/stroke of every highlighted element and clear the list. */
+function restoreHighlights(scene: BoardScene): void {
+  for (const id of scene.highlights) {
+    const prev = scene.elements.find((e) => e.id === id);
+    if (prev) {
+      prev.strokeColor = COLORS.default;
+      prev.backgroundColor = restoreFillColor(id);
+      prev.strokeWidth = 2;
+      prev.selected = false;
+    }
+  }
+  scene.highlights = [];
+}
+
+/** Ids targeted by a highlight payload: elementIds[] if present, else elementId. */
+export function highlightTargets(p: Record<string, unknown>): string[] {
+  if (Array.isArray(p.elementIds)) {
+    const ids = p.elementIds.filter(
+      (v): v is string => typeof v === "string" && v.length > 0,
+    );
+    if (ids.length > 0) return ids;
+  }
+  const single = String(p.elementId ?? "");
+  return single ? [single] : [];
 }
 
 function restoreFillColor(elementId: string): string | undefined {
