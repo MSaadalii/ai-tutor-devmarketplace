@@ -260,21 +260,54 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
       return;
     }
 
+    // Set the step FIRST so the board renders it immediately.
     setCurrentStepIndex(fromIndex);
     const step = stepList[fromIndex];
     setCaption(step.spokenLine);
+
+    const stepStartTime = Date.now();
+    const MIN_DWELL_MS = 1800;
+
     const advance = () => {
       if (playbackId === playbackIdRef.current) {
         playSteps(stepList, fromIndex + 1, playbackId);
       }
     };
 
+    const scheduleAdvance = (delayMs: number) => {
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
+      stepTimerRef.current = setTimeout(advance, delayMs);
+    };
+
     if (isSpeechSupported()) {
-      speakLine(step.spokenLine, language, advance, advance);
+      // On speech end, check dwell gate before advancing.
+      const onSpeechEnd = () => {
+        if (playbackId !== playbackIdRef.current) return;
+        const elapsedMs = Date.now() - stepStartTime;
+        const remainingDwell = Math.max(0, MIN_DWELL_MS - elapsedMs);
+        if (remainingDwell > 0) {
+          scheduleAdvance(remainingDwell);
+        } else {
+          advance();
+        }
+      };
+
+      // On speech error (unsupported, not canceled): schedule 2200ms fallback timer
+      // while respecting the dwell gate.
+      const onSpeechError = () => {
+        if (playbackId !== playbackIdRef.current) return;
+        const elapsedMs = Date.now() - stepStartTime;
+        const delayMs = Math.max(MIN_DWELL_MS, 2200) - elapsedMs;
+        scheduleAdvance(Math.max(0, delayMs));
+      };
+
+      // NEVER pass advance as onError — always handle errors separately.
+      speakLine(step.spokenLine, language, onSpeechEnd, onSpeechError);
       return;
     }
 
-    stepTimerRef.current = setTimeout(advance, 2500);
+    // Speech not supported: schedule dwell-based advance.
+    scheduleAdvance(MIN_DWELL_MS);
   }
 
   function pauseBoard() {

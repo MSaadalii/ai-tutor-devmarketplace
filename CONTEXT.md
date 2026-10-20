@@ -2,8 +2,28 @@
 
 Read this first in every new chat before touching code.
 
-## Last update
-**Phase 3 — exclusive step-by-step highlight.** `applyOperation` (`lib/board/ops.ts`) now handles `highlight` exclusively: it first restores every element in `scene.highlights` (original fill/stroke/strokeWidth via `restoreFillColor`, `selected=false`), clears `highlights[]`, then highlights the new target, so only one region pops at a time during Play. Highlight styling is much stronger: yellow fill (`#fde047`), dark amber stroke (`#b45309`), strokeWidth 5 (was subtle teal, 3). `highlight` also accepts optional `payload.elementIds: string[]`; prior highlights are restored once, then all listed ids are highlighted together. Seeded step 5 in `lib/ai/teachMerge.ts` uses `elementIds: [region_ab_1, region_ab_2]` (plus `elementId` for safety); steps 0–3 stay single-region and step 4 stays `update_label result_label "x^2 + 6x + 9"` (revealing the result also clears the region highlight). `hasRealPayload` accepts `elementIds` only if all ids are known and never ships a highlight without an id. No type/schema change was needed (payload is already a free record). Before Play (index < 0) the plain area model shows. Not built/run here — run `npm run build`. No auth/quiz/deploy/Vapi/Excalidraw changes.
+## Last update (Phase 3 — playback pacing + SVG pulse)
+**Bug:** Play showed captions but board only highlighted ONE square at the FINAL step. No step-by-step highlight animation.
+
+**Root causes:**
+1. `playSteps(advance, advance)` passed advance as both onEnd and onError; speech errors instantly raced through all steps without rendering.
+2. React batch-rendered only the final highlight because all state updates came in one event loop, before the UI had a chance to paint intermediate steps.
+
+**Fixes:**
+- **`app/lesson/[id]/LessonClient.tsx`** — `playSteps` pacing rewritten:
+  - `setCurrentStepIndex(i)` FIRST, then `setCaption`, then speech (forces React to commit step state before TTS starts).
+  - Min dwell per step: **1800 ms** from step start; even if speech ends early, dwell timer gates the advance.
+  - Dwell + speech-end gate: when speech is active, BOTH dwell AND speech completion must occur before advance (whichever is longer).
+  - Speech error handling: NEVER pass `advance` as `onError`. On speech error/unsupported, `setTimeout(2200ms)` respects the dwell gate.
+  - Canceled/paused speech never advances (pause/navigate increments playbackId, canceling the pending callback).
+
+- **`lib/voice/speech.ts`** — `onerror` callback now ignores `"canceled"` AND `"interrupted"` errors; only real failures call `onError`.
+
+- **`components/board/SvgBoard.tsx`** — SVG selected elements (highlighted) now get a 2-cycle CSS pulse (stroke width + opacity animation 0.6s) so the active region is visibly obvious during playback.
+
+- **`lib/ai/teachMerge.ts`** — Already enforces seeded operation authority: Gemini only contributes `spokenLine` and `language`; operations are always seeded (unless Gemini has a real payload for the exact field set). No change needed.
+
+**Result:** Play now draws each step visibly, one at a time, with captions and paced speech. Each step dwells on screen for at least 1.8s. SVG board pulses the highlight so the learner sees exactly which region is being discussed.
 
 ## Earlier update (Phase 2)
 **Phase 2 (blank-board fix) — seeded ops merge.** Teach mode only; answer mode unchanged.
