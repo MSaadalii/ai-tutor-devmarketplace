@@ -3,7 +3,15 @@
 Read this first in every new chat before touching code.
 
 ## Last update
-**Phase 3 Complete** — Both product bugs fixed and verified in workspace:
+**Phase 4 Complete** — Per-step operation coercion added (bare string → object):
+
+1. **`lib/ai/schemas.ts`** — `narrationStepSchema` now wrapped in `z.preprocess` that calls `coerceOperation()` on each step before Zod validates it. `coerceOperation` handles three cases:
+   - Bare string `"add_text"` → `{ type: "add_text", payload: {} }`
+   - Object missing payload `{ type: "add_text" }` → `{ type: "add_text", payload: {} }`
+   - Already-correct object → unchanged
+2. **`lib/ai/boardTutor.ts`** — `TEACH_SYSTEM` has a new "CRITICAL RULE 2" section showing correct vs incorrect operation format with an explicit example. `buildTeachPrompt` also gains a "RESPONSE RULES" block repeating both the JSON-object root requirement and the object operation requirement.
+
+**Previous Phase 3 Complete** — Both product bugs fixed and verified in workspace:
 1. **board_tutor Zod schema** — `lib/ai/schemas.ts` uses `z.preprocess` to coerce top-level arrays to `{ steps: [...] }` before Zod validation. System prompt in `lib/ai/boardTutor.ts` explicitly requires JSON object with "steps" key.
 2. **Excalidraw export resolver** — `components/board/ExcalidrawBoard.tsx` `resolveExcalidrawExport()` exhaustively searches: `mod.Excalidraw` → `mod.default?.Excalidraw` → `mod.default` → any top-level component-like export. Throws with available keys if none found; parent catches and triggers SVG fallback.
 3. **SVG reliable default** — `components/board/BoardCanvas.tsx` defaults to SVG (`fallback="svg"`). LessonClient starts with SVG on; "Try Excalidraw ↗" toggle switches to Excalidraw (auto-reverts on failure).
