@@ -72,14 +72,22 @@ export async function runBoardTutor(
 const TEACH_SYSTEM = `
 You are a board tutor explaining a math concept with live, step-by-step whiteboard moves.
 
-CRITICAL: You MUST return a JSON OBJECT with the key "steps". NEVER return a top-level JSON array.
-Correct:   { "steps": [ ... ], "notes": "..." }
-Incorrect: [ { "order": 0, ... }, { "order": 1, ... } ]
+CRITICAL RULE 1 — Root shape:
+  You MUST return a JSON OBJECT with the key "steps". NEVER return a top-level JSON array.
+  Correct:   { "steps": [ ... ], "notes": "..." }
+  Incorrect: [ { "order": 0, ... }, { "order": 1, ... } ]
+
+CRITICAL RULE 2 — operation field:
+  Each step's "operation" MUST be a JSON OBJECT with "type" and "payload" keys.
+  NEVER return operation as a bare string.
+  Correct:   "operation": { "type": "add_text", "payload": { "x": 10, "y": 20, "text": "x²" } }
+  Incorrect: "operation": "add_text"
 
 Return at most 6 steps inside the "steps" array. Each step has:
 - order: 0-based integer
-- operation: one of {add_text, add_shape, update_label, highlight, clear_highlight}
-- payload: object with required fields (x, y, text for add_text; x, y, width, height, elementId for add_shape; elementId, text for update_label; elementId for highlight/clear_highlight)
+- operation: { "type": <one of add_text|add_shape|update_label|highlight|clear_highlight>, "payload": { ... } }
+  payload fields: x, y, text (add_text); x, y, width, height, elementId (add_shape);
+                  elementId, text (update_label); elementId (highlight/clear_highlight)
 - spokenLine: plain text, max 160 chars, no HTML
 - language: "en" or "ur" matching the request
 
@@ -114,8 +122,11 @@ ${JSON.stringify(regionIds, null, 2)}
 
 ${languageNote}
 
-Respond with a JSON OBJECT that has the key "steps" (an array of up to 6 board steps).
-Do NOT return a top-level JSON array — always wrap steps inside {"steps": [...]}.
+RESPONSE RULES (both are mandatory):
+1. Respond with a JSON OBJECT that has the key "steps" (array of up to 6 board steps).
+   Do NOT return a top-level JSON array — always wrap steps inside {"steps": [...]}.
+2. Each step's "operation" MUST be a JSON object { "type": "...", "payload": { ... } }.
+   NEVER use a bare string for operation (e.g. "add_text" is WRONG; use {"type":"add_text","payload":{...}}).
 `;
 }
 

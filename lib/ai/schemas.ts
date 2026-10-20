@@ -20,13 +20,46 @@ export const boardOperationSchema: z.ZodType<BoardOperation> = z.object({
   payload: z.record(z.string(), z.unknown()),
 });
 
+/**
+ * Coerce the `operation` field in each step before Zod validates it.
+ *
+ * Gemini sometimes returns operation as:
+ *   - A bare string:  "add_text"
+ *     → coerce to { type: "add_text", payload: {} }
+ *   - An object missing payload: { type: "add_text" }
+ *     → add payload: {}
+ *   - A fully-formed object: { type: "add_text", payload: { ... } }
+ *     → leave unchanged
+ */
+function coerceOperation(raw: unknown): unknown {
+  if (typeof raw === "string") {
+    return { type: raw, payload: {} };
+  }
+  if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
+    const op = raw as Record<string, unknown>;
+    if (op.payload === undefined || op.payload === null) {
+      return { ...op, payload: {} };
+    }
+  }
+  return raw;
+}
+
 /** A single narrated step: one board operation + one spoken caption line. */
-export const narrationStepSchema: z.ZodType<NarrationStep> = z.object({
-  order: z.number().int().nonnegative(),
-  operation: boardOperationSchema,
-  spokenLine: z.string().max(160),
-  language: z.enum(["en", "ur"]),
-});
+export const narrationStepSchema: z.ZodType<NarrationStep> = z.preprocess(
+  (raw) => {
+    if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
+      const step = raw as Record<string, unknown>;
+      return { ...step, operation: coerceOperation(step.operation) };
+    }
+    return raw;
+  },
+  z.object({
+    order: z.number().int().nonnegative(),
+    operation: boardOperationSchema,
+    spokenLine: z.string().max(160),
+    language: z.enum(["en", "ur"]),
+  }),
+) as z.ZodType<NarrationStep>;
 
 /**
  * Board Tutor response: ≤6 validated steps + optional notes.
