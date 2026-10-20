@@ -2,6 +2,8 @@
 
 Read this first in every new chat before touching code.
 
+PageShell wide was restored for build: `wide?: boolean` defaults to false, using `max-w-6xl` when enabled and `max-w-5xl` otherwise; human will push and rerun `npm run build`.
+
 Phase 6: Optional Excalidraw conversion uses `{ regenerateIds: false }` to preserve region IDs/highlights and centered bound rectangle labels (superseding Phase 5's separate region-label nodes). Excalidraw export resolution accepts the named export directly and recognizes React wrappers via `$typeof`; the CSS is loaded from `app/layout.tsx`. The canvas fills the existing 420px wrapper; initialData includes converted elements, white background, zoom 1, scrollX/Y 0 and scrollToContent. API readiness and scene/step changes update elements + appState after a 220ms initialization delay, then fit content after layout, retrying without options if unsupported. Measurable canvas dimensions are soft paint confirmation; SVG fallback waits up to 8 seconds, while real load/update failures and empty scenes still fall back. SVG remains the default, manual toggle remains available; no remount key, deploy, Vapi or Stretch. Build/click verification not run (no shell/browser tool). Next: human verifies Start → Diagnose → Play → Try Excalidraw displays the labeled area model and successive highlights, then Use SVG board still works.
 
 ## Last update (Phase 4 — Core board-tutor resilience)
