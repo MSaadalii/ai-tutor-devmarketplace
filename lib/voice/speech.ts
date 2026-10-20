@@ -49,7 +49,9 @@ export function speakLine(
 
   utter.onend = () => onEnd?.();
   utter.onerror = (e) => {
-    if (e.error !== "canceled") {
+    // Ignore "canceled" and "interrupted" — cancellation or pause never advances.
+    // Only call onError for actual failures (e.g., synthesis unsupported).
+    if (e.error !== "canceled" && e.error !== "interrupted") {
       onError?.(new Error(`Speech error: ${e.error}`));
     }
   };

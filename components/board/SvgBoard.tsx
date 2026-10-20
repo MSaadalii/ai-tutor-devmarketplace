@@ -16,6 +16,17 @@ export type SvgBoardProps = {
 const VIEWBOX_WIDTH = 400;
 const VIEWBOX_HEIGHT = 420;
 
+// CSS animation for selected element pulse (2-3 cycles, subtle stroke pulse)
+const PULSE_STYLE = `
+  @keyframes svgPulse {
+    0%, 100% { stroke-width: 5; opacity: 1; }
+    50% { stroke-width: 3; opacity: 0.7; }
+  }
+  .svg-selected-pulse {
+    animation: svgPulse 0.6s ease-in-out 2;
+  }
+`;
+
 export function SvgBoard({
   scene,
   language = "en",
@@ -35,6 +46,7 @@ export function SvgBoard({
 
   return (
     <div className="relative w-full">
+      <style>{PULSE_STYLE}</style>
       <svg
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         className="h-auto w-full rounded-lg border border-stone-200 bg-white"
@@ -49,6 +61,7 @@ export function SvgBoard({
             language={language}
             clickable={clickableIds.has(el.id)}
             selected={selectedElementIds.includes(el.id)}
+            highlighted={scene.highlights.includes(el.id)}
             onClick={() => onElementClick?.(el.id)}
           />
         ))}
@@ -80,12 +93,14 @@ function SvgElement({
   language,
   clickable,
   selected,
+  highlighted,
   onClick,
 }: {
   element: BoardElement;
   language: AppLanguage;
   clickable: boolean;
   selected: boolean;
+  highlighted: boolean;
   onClick: () => void;
 }) {
   const isText = element.type === "text";
@@ -126,6 +141,7 @@ function SvgElement({
         stroke={stroke}
         strokeWidth={selected ? 3 : element.strokeWidth ?? 2}
         rx={4}
+        className={highlighted ? "svg-selected-pulse" : ""}
       />
       {element.text ? (
         <text
