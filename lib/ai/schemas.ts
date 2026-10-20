@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  AppLanguage,
   BoardOperation,
   NarrationStep,
   DetectiveOutcome,
@@ -48,15 +49,14 @@ function coerceOperation(raw: unknown, stepPayload?: unknown): unknown {
   return raw;
 }
 
-/** A single narrated step: one board operation + one spoken caption line. */
+/**
+ * A single narrated step. Gemini occasionally uses alternate names, omits
+ * metadata, nests a step, or returns only the caption. Normalize those shapes
+ * before the existing strict operation/type validation runs. The merge layer
+ * supplies the authoritative seeded operation for caption-only steps.
+ */
 export const narrationStepSchema: z.ZodType<NarrationStep> = z.preprocess(
-  (raw) => {
-    if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
-      const step = raw as Record<string, unknown>;
-      return { ...step, operation: coerceOperation(step.operation, step.payload) };
-    }
-    return raw;
-  },
+  (raw) => normalizeNarrationStep(raw),
   z.object({
     order: z.number().int().nonnegative(),
     operation: boardOperationSchema,
@@ -64,6 +64,34 @@ export const narrationStepSchema: z.ZodType<NarrationStep> = z.preprocess(
     language: z.enum(["en", "ur"]),
   }),
 ) as z.ZodType<NarrationStep>;
+
+function normalizeNarrationStep(raw: unknown, index = 0): unknown {
+  if (typeof raw === "string") {
+    return {
+      order: index,
+      operation: { type: "highlight", payload: {} },
+      spokenLine: raw,
+      language: "en" satisfies AppLanguage,
+    };
+  }
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return raw;
+
+  const value = raw as Record<string, unknown>;
+  // Some responses wrap each item as { step: {...} } or { narration: {...} }.
+  const nested = value.step ?? value.narration ?? value.item;
+  if (nested !== undefined && nested !== value) {
+    return normalizeNarrationStep(nested, index);
+  }
+  const spokenLine = value.spokenLine ?? value.spoken_line ?? value.caption;
+  const operation = value.operation ?? value.op;
+  return {
+    ...value,
+    order: value.order ?? index,
+    operation: coerceOperation(operation ?? "highlight", value.payload),
+    spokenLine: spokenLine ?? "",
+    language: value.language === "ur" ? "ur" : "en",
+  };
+}
 
 /**
  * Board Tutor response: ≤6 validated steps + optional notes.
@@ -73,12 +101,27 @@ export const narrationStepSchema: z.ZodType<NarrationStep> = z.preprocess(
  * shape before Zod validates it, so the schema is resilient to both forms.
  */
 export const boardTutorResponseSchema = z.preprocess(
-  (v) => (Array.isArray(v) ? { steps: v } : v),
+  (v) => normalizeBoardTutorResponse(v),
   z.object({
     steps: z.array(narrationStepSchema).max(6),
     notes: z.string().max(500).optional(),
   }),
 );
+
+function normalizeBoardTutorResponse(raw: unknown): unknown {
+  if (Array.isArray(raw)) {
+    return { steps: raw.map((step, index) => normalizeNarrationStep(step, index)) };
+  }
+  if (raw === null || typeof raw !== "object") return raw;
+
+  const value = raw as Record<string, unknown>;
+  const rawSteps = value.steps ?? value.narrationSteps ?? value.items ?? [];
+  if (!Array.isArray(rawSteps)) return { ...value, steps: [] };
+  return {
+    ...value,
+    steps: rawSteps.map((step, index) => normalizeNarrationStep(step, index)),
+  };
+}
 
 export type BoardTutorResponse = z.infer<typeof boardTutorResponseSchema>;
 

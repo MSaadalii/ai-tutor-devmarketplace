@@ -29,6 +29,20 @@ export type BoardTutorResult = {
 
 const ROLE: GeminiRole = "board_tutor";
 
+function seededTeachResult(
+  pack: ReturnType<typeof getPack>,
+  language: BoardTutorInput["language"],
+): BoardTutorResult {
+  return {
+    steps: mergeTeachSteps([], pack, language),
+    notes: "Using the lesson's guided board steps.",
+  };
+}
+
+function isExhaustedValidationFailure(error: unknown): boolean {
+  return error instanceof Error && /invalid JSON twice/i.test(error.message);
+}
+
 export async function runBoardTutor(
   input: BoardTutorInput,
 ): Promise<BoardTutorResult> {
@@ -54,21 +68,40 @@ export async function runBoardTutor(
     };
   }
 
-  const { output } = await callGeminiJson({
-    sessionId: input.sessionId,
-    userId: input.userId,
-    role: ROLE,
-    prompt,
-    schema: boardTutorResponseSchema,
-    system: TEACH_SYSTEM,
-    supabase: input.supabase,
-  });
+  let output: { steps: NarrationStep[]; notes?: string };
+  try {
+    const result = await callGeminiJson({
+      sessionId: input.sessionId,
+      userId: input.userId,
+      role: ROLE,
+      prompt,
+      schema: boardTutorResponseSchema,
+      system: TEACH_SYSTEM,
+      supabase: input.supabase,
+    });
+    output = result.output;
+  } catch (error) {
+    // callGeminiJson retries malformed JSON/Zod output once. A tutor lesson
+    // must still be playable after both attempts fail; real config/provider
+    // errors continue to the route so they remain visible to the learner.
+    if (isExhaustedValidationFailure(error)) {
+      return seededTeachResult(pack, input.language);
+    }
+    throw error;
+  }
+
+  if (!output.steps.length) return seededTeachResult(pack, input.language);
 
   // Deterministic merge: Gemini narration + pack-seeded ops with real payloads.
-  return {
-    steps: mergeTeachSteps(output.steps, pack, input.language),
-    notes: output.notes,
-  };
+  try {
+    return {
+      steps: mergeTeachSteps(output.steps, pack, input.language),
+      notes: output.notes,
+    };
+  } catch (error) {
+    console.error("Board tutor merge failed; using seeded narration:", error);
+    return seededTeachResult(pack, input.language);
+  }
 }
 
 const TEACH_SYSTEM = `

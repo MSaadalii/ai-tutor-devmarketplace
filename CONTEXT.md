@@ -2,8 +2,15 @@
 
 Read this first in every new chat before touching code.
 
-## Last update (Phase 3 — FINAL: build type fix + playback verification)
-**Status:** Phase 3 complete and verified ready to build.
+## Last update (Phase 4 — Core board-tutor resilience)
+**Status:** Phase 4 complete in code; build/click verification still needs to be run.
+
+**Resilience fixes applied:**
+- **`lib/ai/schemas.ts`** normalizes board-tutor arrays, alternate response keys, nested step items, bare caption strings, `spoken_line`/`caption`, and `op`/`operation` before strict validation. Missing order/language are defaulted safely.
+- **`lib/ai/boardTutor.ts`** returns deterministic `mergeTeachSteps([], pack, language)` narration when teach output is empty, merging throws, or Gemini returns invalid JSON/Zod output twice. Provider/config errors still surface normally.
+- No deployment, Vapi/Stretch, database, or Excalidraw changes were made.
+
+**Next:** run the existing Start → Diagnose → Play click path and then continue the already-completed downstream lesson checks.
 
 **TypeScript fixes applied:**
 - **`components/board/ExcalidrawBoard.tsx`** — Type the dynamically-loaded Excalidraw component as `ComponentType<Record<string, unknown>>` so the JSX props type-check correctly.
