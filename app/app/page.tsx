@@ -138,97 +138,87 @@ export default function AppHomePage() {
 
   return (
     <PageShell actions={<SignOutButton />}>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">My lessons</h1>
-          <p className="text-sm text-stone-600">
-            {email ? (
-              <>
-                Signed in as <span className="font-medium">{email}</span> ·{" "}
-                <span className="text-teal-800">2FA on</span>
-              </>
-            ) : (
-              "Loading account…"
-            )}
-          </p>
-        </div>
+      <div className="dashboard">
+        <section className="dashboard-hero">
+          <div>
+            <span className="dashboard-eyebrow">YOUR LEARNING SPACE</span>
+            <h1>Make a little progress today.</h1>
+            <p>Clear explanations, one thoughtful step at a time.</p>
+          </div>
+          <div className="dashboard-account">
+            <span className="dashboard-avatar" aria-hidden="true">✳</span>
+            <div>
+              <span className="dashboard-account-label">SIGNED IN AS</span>
+              <p>{email ?? "Loading account…"}</p>
+              {email ? <span className="dashboard-security">✓ Secure sign-in · 2FA on</span> : null}
+            </div>
+          </div>
+        </section>
 
         {error ? <AuthNotice kind="error">{error}</AuthNotice> : null}
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-            Start a lesson
-          </h2>
-          <ul className="space-y-3">
-            {listPacks().map((pack) => (
-              <li
-                key={pack.id}
-                className="flex items-center justify-between rounded-lg border border-stone-200 bg-white px-4 py-3"
-              >
-                <div>
-                  <p className="font-medium">{pack.title}</p>
-                  <p className="text-xs text-stone-500">
-                    {pack.id} · v{pack.version}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  disabled={creating !== null || !userId}
-                  onClick={() => void startPack(pack.id, pack.version)}
-                >
-                  {creating === pack.id ? "Starting…" : "Start"}
+        <section className="dashboard-start" aria-label="Start learning">
+          <div className="dashboard-section-heading">
+            <div><span className="dashboard-eyebrow">PICK UP SOMETHING NEW</span><h2>Where shall we begin?</h2></div>
+            <span className="dashboard-heading-note">A good question is a great start.</span>
+          </div>
+          <div className="dashboard-start-grid">
+            <div className="dashboard-pack-list">
+              {listPacks().map((pack, index) => (
+                <article key={pack.id} className="dashboard-pack-card">
+                  <div className="dashboard-pack-symbol" aria-hidden="true">{index === 0 ? "▱" : "✦"}</div>
+                  <div className="dashboard-pack-copy">
+                    <span className="dashboard-card-kicker">GUIDED LESSON</span>
+                    <h3>{pack.title}</h3>
+                    <p>{pack.id} <span aria-hidden="true">·</span> Version {pack.version}</p>
+                  </div>
+                  <Button className="dashboard-cta" size="sm" disabled={creating !== null || !userId}
+                    onClick={() => void startPack(pack.id, pack.version)}>
+                    {creating === pack.id ? "Starting…" : "Start lesson"}<span aria-hidden="true">↗</span>
+                  </Button>
+                </article>
+              ))}
+            </div>
+
+            <form className="dashboard-brief" onSubmit={(event) => { event.preventDefault(); void startBrief(); }}>
+              <div className="dashboard-brief-icon" aria-hidden="true">✎</div>
+              <span className="dashboard-card-kicker">YOUR CURIOSITY, YOUR WAY</span>
+              <label htmlFor="topic-brief">Start from a topic</label>
+              <p>Tell your tutor what you’re working on or what feels confusing.</p>
+              <textarea id="topic-brief" required maxLength={2000} rows={4}
+                value={topicBrief} onChange={(event) => setTopicBrief(event.target.value)}
+                placeholder="For example: I’m learning about…"
+                className="dashboard-textarea" />
+              <div className="dashboard-brief-footer">
+                <span>{topicBrief.length}/2000 · Introductory lesson, no grades</span>
+                <Button type="submit" className="dashboard-cta" disabled={!userId || creating !== null || !topicBrief.trim()}>
+                  {creating === "topic-brief" ? "Starting…" : "Start topic lesson"}<span aria-hidden="true">↗</span>
                 </Button>
-              </li>
-            ))}
-          </ul>
-          <form className="space-y-3 rounded-lg border border-stone-300 bg-white p-4 text-sm"
-            onSubmit={(event) => { event.preventDefault(); void startBrief(); }}>
-            <label htmlFor="topic-brief" className="block font-medium">Or start from a topic brief</label>
-            <textarea id="topic-brief" required maxLength={2000} rows={4}
-              value={topicBrief} onChange={(event) => setTopicBrief(event.target.value)}
-              placeholder="What would you like to learn? Add your level and what is confusing."
-              className="w-full rounded-md border border-stone-300 p-3" />
-            <p className="text-xs text-stone-500">{topicBrief.length}/2000 characters · Introductory AI lesson, no quiz or grades.</p>
-            <Button type="submit" disabled={!userId || creating !== null || !topicBrief.trim()}>
-              {creating === "topic-brief" ? "Starting…" : "Start topic lesson"}
-            </Button>
-          </form>
+              </div>
+            </form>
+          </div>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-            Saved sessions
-          </h2>
+        <section className="dashboard-sessions">
+          <div className="dashboard-section-heading dashboard-session-heading">
+            <div><span className="dashboard-eyebrow">YOUR JOURNEY SO FAR</span><h2>Saved lessons</h2></div>
+            {!loading && sessions.length > 0 ? <span className="dashboard-session-count">{sessions.length} {sessions.length === 1 ? "lesson" : "lessons"}</span> : null}
+          </div>
           {loading ? (
-            <p className="text-sm text-stone-500">Loading…</p>
+            <div className="dashboard-empty">Gathering your lessons…</div>
           ) : sessions.length === 0 ? (
-            <p className="text-sm text-stone-500">
-              No sessions yet — start a pack or enter a topic brief above.
-            </p>
+            <div className="dashboard-empty"><span aria-hidden="true">✧</span><p>Your learning journey starts here.</p><small>Start a guided lesson or bring your own topic above.</small></div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="dashboard-session-list">
               {sessions.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {s.pack_id ?? "Topic brief"}{" "}
-                      <span className="text-xs font-normal text-stone-500">
-                        {s.status} · {s.language}
-                      </span>
-                    </p>
-                    <p className="text-xs text-stone-500">
-                      {new Date(s.created_at).toLocaleString()}
-                    </p>
+                <li key={s.id} className="dashboard-session-row">
+                  <span className="dashboard-session-icon" aria-hidden="true">{s.pack_id ? "▱" : "✎"}</span>
+                  <div className="dashboard-session-copy">
+                    <p>{s.pack_id ?? "Topic brief"}</p>
+                    <span>{new Date(s.created_at).toLocaleString()} <i>·</i> {s.language}</span>
                   </div>
-                  <Link
-                    href={`/lesson/${s.id}`}
-                    className="text-sm font-medium text-teal-800 underline"
-                  >
-                    Open
-                  </Link>
+                  <span className={`dashboard-status ${s.status === "in_progress" ? "is-progress" : ""}`}>{s.status.replaceAll("_", " ")}</span>
+                  <Link href={`/lesson/${s.id}`} className="dashboard-open">Continue <span aria-hidden="true">→</span></Link>
                 </li>
               ))}
             </ul>
