@@ -6,7 +6,10 @@ PageShell wide was restored for build: `wide?: boolean` defaults to false, using
 
 Phase 6: Optional Excalidraw conversion uses `{ regenerateIds: false }` to preserve region IDs/highlights and centered bound rectangle labels (superseding Phase 5's separate region-label nodes). Excalidraw export resolution accepts the named export directly and recognizes React wrappers via `$typeof`; the CSS is loaded from `app/layout.tsx`. The canvas fills the existing 420px wrapper; initialData includes converted elements, white background, zoom 1, scrollX/Y 0 and scrollToContent. API readiness and scene/step changes update elements + appState after a 220ms initialization delay, then fit content after layout, retrying without options if unsupported. Measurable canvas dimensions are soft paint confirmation; SVG fallback waits up to 8 seconds, while real load/update failures and empty scenes still fall back. SVG remains the default, manual toggle remains available; no remount key, deploy, Vapi or Stretch. Build/click verification not run (no shell/browser tool). Next: human verifies Start → Diagnose → Play → Try Excalidraw displays the labeled area model and successive highlights, then Use SVG board still works.
 
-## Last update (Phase 5 — Core topic-brief learning path)
+## Last update (Phase 6 — Landing UI pass toward a warm tutor brand)
+UI-only: `/` is now a marketing page (`app/page.tsx`, `components/landing/LandingNav.tsx`, `BoardMock.tsx`) with beige/charcoal/teal CSS variables and Plus Jakarta Sans via next/font. Nav: Features / How it works / FAQs, Sign in → /login, Get Started → /signup (logged-in users see Open app → /app; auth check is try/catch so missing Supabase config doesn't crash). Hero has a dominant SVG live-board mock with Live badge and a trust row (Urdu + English, No card needed, Captions always on). No changes to auth, APIs, board logic, quiz, or Judge path. Not built/run here. No secrets.
+
+## Previous (Phase 5 — Core topic-brief learning path)
 **Status:** Implemented; no build/browser execution available in this workspace. Human pushes and tests; no deploy performed.
 
 - `/app` now accepts a nonblank brief up to 2,000 characters and creates an owned `learning_sessions` row with `topic_brief`, `pack_id: null`, and `pack_version: null`. Existing schema and auth are unchanged.

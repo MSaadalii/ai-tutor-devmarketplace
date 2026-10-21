@@ -14,6 +14,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
+:root {
+  --charcoal: #26221e;
+}
+
+.landing {
+  background: #f6f0e6;
+  font-family: var(--font-jakarta), var(--font-geist-sans), sans-serif;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
