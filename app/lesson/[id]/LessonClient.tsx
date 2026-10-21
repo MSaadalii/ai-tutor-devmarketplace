@@ -42,6 +42,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   const pack = useMemo(() => getPack(), []);
 
   const [session, setSession] = useState<LearningSessionRow | null>(null);
+  const isBrief = session !== null && session.pack_id === null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<AppLanguage>("en");
@@ -51,6 +52,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
   const [steps, setSteps] = useState<NarrationStep[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const [answerSteps, setAnswerSteps] = useState<NarrationStep[]>([]);
   const [playing, setPlaying] = useState(false);
   const [caption, setCaption] = useState<string>("");
   const [boardError, setBoardError] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
   const activePhase = useMemo(() => {
     if (summary) return "summary";
+    if (isBrief) return steps.length > 0 ? "question" : "board";
     if (quizResults.length === pack.quiz.length && pack.quiz.length > 0)
       return "summary_ready";
     if (taskResult?.correct) return "quiz";
@@ -92,9 +95,11 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     }
     if (diagnosis) return "board";
     return "diagnose";
-  }, [summary, quizResults, taskResult, answerText, steps, diagnosis, probeAnswers, pack]);
+  }, [summary, quizResults, taskResult, answerText, steps, diagnosis, probeAnswers, pack, isBrief]);
 
-  const activeIndex = PHASE_INDEX[activePhase] ?? 0;
+  const activeIndex = isBrief
+    ? (summary ? 2 : steps.length ? 1 : 0)
+    : PHASE_INDEX[activePhase] ?? 0;
 
   const loadSession = useCallback(async () => {
     if (!isSupabaseConfigured()) {
@@ -126,6 +131,21 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     const row = data as LearningSessionRow;
     setSession(row);
     setLanguage(row.language);
+    if (row.pack_id === null) {
+      const { data: savedSteps, error: narrationError } = await supabase
+        .from("narration_steps").select("step_order, operation, spoken_line, language")
+        .eq("session_id", sessionId).eq("language", row.language)
+        .order("step_order", { ascending: true });
+      if (narrationError) setError(`Could not restore narration: ${narrationError.message}`);
+      if (savedSteps?.length) {
+        setSteps(savedSteps.map((s) => ({ order: s.step_order, operation: s.operation,
+          spokenLine: s.spoken_line, language: s.language })) as NarrationStep[]);
+      }
+      const { data: savedSummary, error: summaryError } = await supabase
+        .from("lesson_summaries").select("bullets").eq("session_id", sessionId).maybeSingle();
+      if (summaryError) setError(`Could not restore summary: ${summaryError.message}`);
+      if (savedSummary?.bullets) setSummary(savedSummary.bullets as string[]);
+    }
     setLoading(false);
   }, [router, sessionId]);
 
@@ -195,6 +215,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
   async function playBoard() {
     setBoardError(null);
+    if (isBrief) setAnswerSteps([]);
     setPlaying(true);
 
     // Resume from the next step if we already have narration; otherwise fetch.
@@ -317,6 +338,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
   function replayBoard() {
     stopPlayback();
+    if (isBrief) setAnswerSteps([]);
     if (steps.length > 0) {
       const playbackId = playbackIdRef.current;
       setPlaying(true);
@@ -335,7 +357,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     setPlaying(false);
     setError(null);
     await guarded(async () => {
-      const data = await postJson<{ notes?: string }>("/api/ai/board-tutor", {
+      const data = await postJson<{ notes?: string; steps?: NarrationStep[] }>("/api/ai/board-tutor", {
         session_id: sessionId,
         problem: PROBLEM,
         mode: "answer",
@@ -344,6 +366,19 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         language,
       });
       setAnswerText(data.notes ?? "Answer received.");
+      if (isBrief && data.steps?.length) {
+        // Namespace answer IDs so additions cannot collide with the teach board.
+        const prefix = `answer_${Date.now()}_`;
+        const additions = data.steps.map((step) => {
+          const p = { ...step.operation.payload };
+          for (const key of ["id", "elementId"] as const) {
+            if (typeof p[key] === "string") p[key] = prefix + p[key];
+          }
+          if (Array.isArray(p.elementIds)) p.elementIds = p.elementIds.map((id) => prefix + id);
+          return { ...step, operation: { ...step.operation, payload: p } };
+        });
+        setAnswerSteps((prev) => [...prev, ...additions]);
+      }
     });
   }
 
@@ -390,6 +425,21 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     });
   }
 
+  function changeLanguage(next: AppLanguage) {
+    if (next === language) return;
+    if (isBrief) {
+      stopPlayback();
+      setPlaying(false);
+      setSteps([]);
+      setSummary(null);
+      setAnswerSteps([]);
+      setCurrentStepIndex(-1);
+      setCaption("");
+      setAnswerText(null);
+    }
+    setLanguage(next);
+  }
+
   function toggleElement(id: string) {
     if (activePhase === "board_task") {
       setTaskSelections((prev) =>
@@ -431,12 +481,12 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-stone-500">
-              {pack.title} ·{" "}
-              {session?.pack_id === BINOMIAL_SQUARE_ID ? "pack" : "topic"}
+              {isBrief ? "Topic brief · Ungraded" : `${pack.title} · ${session?.pack_id === BINOMIAL_SQUARE_ID ? "pack" : "topic"}`}
             </p>
-            <h1 className="text-2xl font-semibold">{PROBLEM}</h1>
+            <h1 className="text-2xl font-semibold">{isBrief ? "Your topic lesson" : PROBLEM}</h1>
+            {isBrief ? <p className="mt-2 max-w-2xl whitespace-pre-wrap text-sm text-stone-600">{session?.topic_brief}</p> : null}
           </div>
-          <LessonStepper activeIndex={activeIndex} />
+          <LessonStepper activeIndex={activeIndex} brief={isBrief} />
         </div>
 
         {configWarning ? <AuthNotice kind="error">{configWarning}</AuthNotice> : null}
@@ -460,14 +510,14 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           <Button
             size="sm"
             variant={language === "en" ? "default" : "outline"}
-            onClick={() => setLanguage("en")}
+            onClick={() => changeLanguage("en")}
           >
             English
           </Button>
           <Button
             size="sm"
             variant={language === "ur" ? "default" : "outline"}
-            onClick={() => setLanguage("ur")}
+            onClick={() => changeLanguage("ur")}
           >
             اردو
           </Button>
@@ -505,13 +555,15 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         <CaptionBar text={caption || undefined} language={language} />
 
         <BoardCanvas
-          steps={steps}
-          currentStepIndex={currentStepIndex}
+          sceneKind={isBrief ? "brief" : "pack"}
+          language={language}
+          steps={isBrief && answerSteps.length ? [...steps, ...answerSteps] : steps}
+          currentStepIndex={isBrief && answerSteps.length ? steps.length + answerSteps.length - 1 : currentStepIndex}
           selectedElementIds={
             activePhase === "board_task" ? taskSelections : selectedElementIds
           }
           onElementClick={toggleElement}
-          taskElementIds={pack.boardTaskElementIds}
+          taskElementIds={isBrief ? [] : pack.boardTaskElementIds}
           taskMode={activePhase === "board_task"}
           fallback={useSvgFallback ? "svg" : "excalidraw"}
         />
@@ -546,6 +598,14 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             onFinish={handleFinishQuiz}
           />
         )}
+
+        {isBrief ? (
+          <div className="space-y-2 rounded-md border border-stone-200 bg-stone-50 p-4 text-sm">
+            <p>Ungraded topic lesson: Detective, the pack board task, and quiz are skipped. No score or mastery claim is recorded. Ask a question or finish after viewing the explanation.</p>
+            {!summary ? <Button disabled={playing || steps.length === 0 || currentStepIndex < steps.length - 1}
+              onClick={() => void handleFinishQuiz()}>Finish · Ungraded summary</Button> : null}
+          </div>
+        ) : null}
 
         {summary ? (
           <SummaryPanel bullets={summary} language={language} />

@@ -6,7 +6,19 @@ PageShell wide was restored for build: `wide?: boolean` defaults to false, using
 
 Phase 6: Optional Excalidraw conversion uses `{ regenerateIds: false }` to preserve region IDs/highlights and centered bound rectangle labels (superseding Phase 5's separate region-label nodes). Excalidraw export resolution accepts the named export directly and recognizes React wrappers via `$typeof`; the CSS is loaded from `app/layout.tsx`. The canvas fills the existing 420px wrapper; initialData includes converted elements, white background, zoom 1, scrollX/Y 0 and scrollToContent. API readiness and scene/step changes update elements + appState after a 220ms initialization delay, then fit content after layout, retrying without options if unsupported. Measurable canvas dimensions are soft paint confirmation; SVG fallback waits up to 8 seconds, while real load/update failures and empty scenes still fall back. SVG remains the default, manual toggle remains available; no remount key, deploy, Vapi or Stretch. Build/click verification not run (no shell/browser tool). Next: human verifies Start → Diagnose → Play → Try Excalidraw displays the labeled area model and successive highlights, then Use SVG board still works.
 
-## Last update (Phase 4 — Core board-tutor resilience)
+## Last update (Phase 5 — Core topic-brief learning path)
+**Status:** Implemented; no build/browser execution available in this workspace. Human pushes and tests; no deploy performed.
+
+- `/app` now accepts a nonblank brief up to 2,000 characters and creates an owned `learning_sessions` row with `topic_brief`, `pack_id: null`, and `pack_version: null`. Existing schema and auth are unchanged.
+- Board-tutor routes load the owned stored session to choose pack vs brief. New `lib/ai/briefTutor.ts` reuses the existing Zod/Gemini retry pipeline and approved operations, additionally checking drawable bounded payloads and valid local IDs for empty brief boards. Brief teaching/answers use the stored brief; prompts require uncertainty/assumptions for thin input. No binomial seeds or pack fallback can enter this branch; malformed output surfaces a recoverable error.
+- Brief lessons skip Detective, forced misconceptions, 2bx task, and quiz. The stepper and finish action explicitly say ungraded. Both quiz aliases (shared handler) reject packless sessions; board-task API also rejects them. Pack grading implementation, seeded teach path, auth, and Supabase schema were not modified.
+- `BoardCanvas`/scene replay accept a brief scene mode that starts empty while pack defaults remain the area model. Validated optional brief answer ops render on the same board, with namespaced IDs. SVG remains default; Excalidraw toggle/fallback is unchanged. Captions and existing paced playback are reused.
+- Summary for brief sessions requires saved narration, quotes its actual lines, and explicitly states no quiz/score/mastery assessment. Saved brief narration/summary restore on reopen; language changes reset brief playback and successful teach saves language. Brief narration/summary persistence errors surface rather than silently claiming success.
+- Restored the absent `components/layout/PageShell.tsx`, already imported throughout the existing project, with the documented `wide`/actions API. Marketplace gig 92's validated-input/current-user patterns were reviewed; existing Supabase ownership and Zod conventions were retained instead of importing unrelated NestJS auth.
+
+**Human verification:** `npm install`, `npm run build`, `npm run dev`. `/app` → paste brief → Start topic lesson → Play (no diagnosis, no binomial scene) → Ask → Finish · Ungraded summary → reopen. Try a thin brief, whitespace, 2,000-char input, missing Gemini config, invalid model output, and second-account isolation. Regression: Binomial Squares → Diagnose → Play → Ask → 2bx task → Quiz → Summary. README contains the checklist. No Vapi, CI, Stretch, deploy, schema, or secret changes. Stop after Phase 5.
+
+## Previous update (Phase 4 — Core board-tutor resilience)
 **Status:** Phase 4 complete in code; build/click verification still needs to be run.
 
 **Resilience fixes applied:**

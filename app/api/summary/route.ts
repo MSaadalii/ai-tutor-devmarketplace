@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (denied) return denied;
 
     // Fetch stored narration steps and quiz results.
-    const { data: steps } = await supabase
+    const { data: steps, error: stepsError } = await supabase
       .from("narration_steps")
       .select("spoken_line, step_order")
       .eq("session_id", session_id)
@@ -47,15 +47,23 @@ export async function POST(request: Request) {
       .eq("session_id", session_id)
       .order("created_at", { ascending: true });
 
-    const { data: session } = await supabase
+    const { data: session, error: sessionError } = await supabase
       .from("learning_sessions")
       .select("detective_outcome, misconception_id, pack_id")
       .eq("id", session_id)
       .single();
 
-    const bullets: string[] = [];
+    if (sessionError || !session) throw new Error("Could not load lesson context.");
+    if (stepsError) throw new Error("Could not load saved narration for the summary.");
+    const isBrief = session.pack_id === null;
+    if (isBrief && !steps?.length) {
+      return NextResponse.json({ error: "Play and save the topic explanation before creating a summary." }, { status: 400 });
+    }
+    const bullets: string[] = isBrief ? [language === "ur"
+      ? "یہ سبق غیر درجہ بند ہے۔ کوئی کوئز یا اسکور نہیں؛ مہارت کی تصدیق نہیں کی گئی۔"
+      : "Ungraded topic lesson. No quiz or score; understanding and mastery have not been assessed."] : [];
 
-    if (session?.detective_outcome) {
+    if (!isBrief && session?.detective_outcome) {
       bullets.push(
         language === "ur"
           ? `تشخیص: ${session.detective_outcome}.`
@@ -73,7 +81,7 @@ export async function POST(request: Request) {
         : `${q.item_seed}: ${q.correct ? "correct" : "incorrect"}`,
     );
 
-    if (quizSummary.length > 0) {
+    if (!isBrief && quizSummary.length > 0) {
       bullets.push(
         language === "ur"
           ? `کویز کے نتائج: ${quizSummary.join(", ")}`
@@ -88,7 +96,7 @@ export async function POST(request: Request) {
     };
 
     try {
-      await supabase.from("lesson_summaries").upsert(
+      const { error: saveError } = await supabase.from("lesson_summaries").upsert(
         {
           session_id,
           user_id: user.id,
@@ -98,12 +106,16 @@ export async function POST(request: Request) {
         { onConflict: "session_id" },
       );
 
-      await supabase
+      if (isBrief && saveError) throw new Error(`Could not save summary: ${saveError.message}`);
+
+      const { error: completeError } = await supabase
         .from("learning_sessions")
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", session_id)
         .eq("user_id", user.id);
+      if (isBrief && completeError) throw new Error(`Could not complete lesson: ${completeError.message}`);
     } catch (persistError) {
+      if (isBrief) throw persistError;
       console.error("Failed to persist summary:", persistError);
     }
 
