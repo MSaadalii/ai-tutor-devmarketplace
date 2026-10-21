@@ -3,7 +3,7 @@ import { z, type ZodTypeAny } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ConfigError } from "@/lib/apiError";
 
-export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+export const DEFAULT_GEMINI_MODEL = "gemini-2.0-flash";
 
 /** Read at call time; an empty GEMINI_MODEL falls back to the default. */
 export function getGeminiModelName(): string {
@@ -32,7 +32,7 @@ export function getGeminiModel(system?: string) {
     generationConfig: {
       responseMimeType: "application/json",
       temperature: 0.2,
-      // 2.5 models spend output tokens on thinking; leave headroom for the JSON.
+      // Leave output-token headroom for the generated JSON response.
       maxOutputTokens: 8192,
     },
   });
@@ -56,7 +56,7 @@ export type GeminiCallResult<T extends ZodTypeAny> = {
 };
 
 /**
- * Call Gemini 2.5 Flash, parse JSON, Zod-validate, and retry once on invalid JSON.
+ * Call the configured Gemini model, parse JSON, Zod-validate, and retry once on invalid JSON.
  * Persists the run to model_runs when supabase is provided.
  */
 export async function callGeminiJson<T extends ZodTypeAny>(
