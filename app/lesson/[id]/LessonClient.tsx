@@ -17,6 +17,7 @@ import {
   SUPABASE_CONFIG_MESSAGE,
 } from "@/lib/supabase/client";
 import { speakLine, cancelSpeech, isSpeechSupported } from "@/lib/voice/speech";
+import { speakVapi, cancelVapi, connectVapi, closeVapi, isVapiReady } from "@/lib/voice/vapi";
 import { getPack, BINOMIAL_SQUARE_ID } from "@/lib/packs/binomial_square";
 import { DiagnosePanel, probeText, type Diagnosis } from "@/components/lesson/DiagnosePanel";
 import { QuestionPanel } from "@/components/lesson/QuestionPanel";
@@ -217,16 +218,19 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     setBoardError(null);
     if (isBrief) setAnswerSteps([]);
     setPlaying(true);
+    // Invalidate any stale callbacks, then try Vapi (falls back silently).
+    playbackIdRef.current += 1;
+    const myId = playbackIdRef.current;
+    await connectVapi();
+    if (myId !== playbackIdRef.current) return;
 
     // Resume from the next step if we already have narration; otherwise fetch.
     if (steps.length > 0 && currentStepIndex < steps.length - 1) {
-      const playbackId = playbackIdRef.current;
-      playSteps(steps, currentStepIndex + 1, playbackId);
+      playSteps(steps, currentStepIndex + 1, myId);
       return;
     }
     if (steps.length > 0 && currentStepIndex >= steps.length - 1) {
-      const playbackId = playbackIdRef.current;
-      playSteps(steps, 0, playbackId);
+      playSteps(steps, 0, myId);
       return;
     }
 
@@ -241,8 +245,9 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         mode: "teach",
         language,
       });
+      if (myId !== playbackIdRef.current) return;
       setSteps(data.steps);
-      playSteps(data.steps, 0, playbackIdRef.current);
+      playSteps(data.steps, 0, myId);
     } catch (e) {
       setBoardError(e instanceof Error ? e.message : "Board tutor failed");
       setPlaying(false);
@@ -260,6 +265,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     playbackIdRef.current += 1;
     clearStepTimer();
     cancelSpeech();
+    cancelVapi();
   }
 
   function playSteps(
@@ -270,6 +276,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     if (playbackId !== playbackIdRef.current) return;
     clearStepTimer();
     cancelSpeech();
+    cancelVapi();
 
     if (fromIndex >= stepList.length) {
       setPlaying(false);
@@ -300,7 +307,12 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
       stepTimerRef.current = setTimeout(advance, delayMs);
     };
 
-    if (isSpeechSupported()) {
+    const fallbackToWebSpeech = () => {
+      if (playbackId !== playbackIdRef.current) return;
+      if (!isSpeechSupported()) {
+        scheduleAdvance(MIN_DWELL_MS);
+        return;
+      }
       // On speech end, check dwell gate before advancing.
       const onSpeechEnd = () => {
         if (playbackId !== playbackIdRef.current) return;
@@ -324,11 +336,21 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
       // NEVER pass advance as onError — always handle errors separately.
       speakLine(step.spokenLine, language, onSpeechEnd, onSpeechError);
+    };
+
+    if (isVapiReady()) {
+      const onVapiEnd = () => {
+        if (playbackId !== playbackIdRef.current) return;
+        const remaining = Math.max(0, MIN_DWELL_MS - (Date.now() - stepStartTime));
+        scheduleAdvance(remaining);
+      };
+      // Any Vapi failure falls back to Web Speech for this and later steps.
+      speakVapi(step.spokenLine, language, onVapiEnd, () => {
+        if (playbackId === playbackIdRef.current) fallbackToWebSpeech();
+      });
       return;
     }
-
-    // Speech not supported: schedule dwell-based advance.
-    scheduleAdvance(MIN_DWELL_MS);
+    fallbackToWebSpeech();
   }
 
   function pauseBoard() {
@@ -336,12 +358,14 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     setPlaying(false);
   }
 
-  function replayBoard() {
+  async function replayBoard() {
     stopPlayback();
     if (isBrief) setAnswerSteps([]);
     if (steps.length > 0) {
       const playbackId = playbackIdRef.current;
       setPlaying(true);
+      await connectVapi();
+      if (playbackId !== playbackIdRef.current) return;
       playSteps(steps, 0, playbackId);
     }
   }
@@ -349,6 +373,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     return () => {
       stopPlayback();
+      closeVapi();
     };
   }, []);
 
