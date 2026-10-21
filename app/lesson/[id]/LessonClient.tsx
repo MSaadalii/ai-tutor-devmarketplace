@@ -455,7 +455,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   if (!loading && !session) {
     return (
       <PageShell actions={<SignOutButton />}>
-        <div className="space-y-3">
+        <div className="lesson-chrome space-y-3">
           <AuthNotice kind="error">
             {error ?? "Session not found or not yours."}
           </AuthNotice>
@@ -470,17 +470,17 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   if (loading) {
     return (
       <PageShell actions={<SignOutButton />}>
-        <p className="text-sm text-stone-500">Loading lesson…</p>
+        <p className="lesson-chrome text-sm text-stone-500">Loading lesson…</p>
       </PageShell>
     );
   }
 
   return (
     <PageShell wide actions={<SignOutButton />}>
-      <div className="space-y-4">
+      <div className="lesson-chrome space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p className="lesson-eyebrow">
               {isBrief ? "Topic brief · Ungraded" : `${pack.title} · ${session?.pack_id === BINOMIAL_SQUARE_ID ? "pack" : "topic"}`}
             </p>
             <h1 className="text-2xl font-semibold">{isBrief ? "Your topic lesson" : PROBLEM}</h1>
@@ -494,7 +494,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         {boardError ? <AuthNotice kind="error">{boardError}</AuthNotice> : null}
 
         {diagnosis ? (
-          <div className="rounded-md bg-stone-50 p-3 text-sm">
+          <div className="lesson-soft p-4 text-sm">
             <p className="font-medium">Diagnosis: {diagnosis.outcome}</p>
             <p className="text-stone-600">{diagnosis.explanation}</p>
             {activePhase !== "diagnose" ? (
@@ -600,7 +600,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         )}
 
         {isBrief ? (
-          <div className="space-y-2 rounded-md border border-stone-200 bg-stone-50 p-4 text-sm">
+          <div className="lesson-card space-y-2 p-4 text-sm">
             <p>Ungraded topic lesson: Detective, the pack board task, and quiz are skipped. No score or mastery claim is recorded. Ask a question or finish after viewing the explanation.</p>
             {!summary ? <Button disabled={playing || steps.length === 0 || currentStepIndex < steps.length - 1}
               onClick={() => void handleFinishQuiz()}>Finish · Ungraded summary</Button> : null}

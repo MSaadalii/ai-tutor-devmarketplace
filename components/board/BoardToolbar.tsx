@@ -14,7 +14,7 @@ export function BoardToolbar({
   playing?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="lesson-toolbar flex flex-wrap gap-2">
       <Button type="button" onClick={onPlay} disabled={disabled || playing}>
         Play explanation
       </Button>
