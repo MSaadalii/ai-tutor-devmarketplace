@@ -196,3 +196,5 @@ All 8 tables have RLS enabled. Child insert/update policies verify the session b
 - Live Supabase project + `GEMINI_API_KEY` must be set in Secrets before the E2E can run.
 - `npm run build` must pass locally before pushing to Vercel.
 - No secret values belong in this file.
+
+## Last update (Phase 9 — Warm lesson chrome polish): UI-only. `/lesson/[id]` now uses a `.lesson-chrome` marker plus scoped CSS in `app/globals.css` (beige page/header, charcoal pill buttons, soft cards for the panels, teal-accent caption bar and stepper, warm inputs/notices). Small class additions only in LessonClient, LessonStepper, BoardToolbar, CaptionBar; playback, board, AI, API, grading and auth logic untouched. Not built/run here.

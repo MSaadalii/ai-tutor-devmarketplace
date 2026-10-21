@@ -17,7 +17,7 @@ export function LessonStepper({
   brief?: boolean;
 }) {
   return (
-    <ol className="flex flex-wrap gap-2">
+    <ol className="lesson-stepper flex flex-wrap gap-2">
       {(brief ? ["Board", "Ask (optional)", "Ungraded summary"] : STEPS).map((label, i) => (
         <li
           key={label}

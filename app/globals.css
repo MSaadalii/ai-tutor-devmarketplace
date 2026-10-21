@@ -189,3 +189,38 @@ body {
   .dashboard-status { margin-left: 48px; }
   .dashboard-open { margin-left: auto; }
 }
+
+
+/* Warm lesson chrome — presentation only, scoped to /lesson/[id] via .lesson-chrome. */
+.min-h-screen:has(.lesson-chrome) { background: #f6f0e6; color: #29251f; font-family: var(--font-jakarta), var(--font-geist-sans), sans-serif; }
+.min-h-screen:has(.lesson-chrome) > header { border-color: rgba(72, 61, 47, .1); background: rgba(255, 253, 249, .8); }
+.min-h-screen:has(.lesson-chrome) > header > div { max-width: 1180px; }
+.min-h-screen:has(.lesson-chrome) > header a { color: #302c26; font-weight: 800; letter-spacing: -.04em; }
+.min-h-screen:has(.lesson-chrome) > header button { min-height: 39px; border: 0; border-radius: 999px; background: #292722; color: #fffdf8; padding: 0 19px; font-weight: 700; }
+.min-h-screen:has(.lesson-chrome) > header button:hover { background: #403b34; }
+.min-h-screen:has(.lesson-chrome) > main { max-width: 1180px; padding-top: 30px; padding-bottom: 72px; }
+.lesson-chrome h1 { font-weight: 700; letter-spacing: -.05em; line-height: 1.15; }
+.lesson-chrome h2 { font-weight: 700; letter-spacing: -.03em; }
+.lesson-chrome section,
+.lesson-chrome .lesson-card { border: 1px solid rgba(72, 61, 47, .11) !important; border-radius: 20px !important; background: rgba(255, 253, 249, .92) !important; padding: 20px 22px !important; box-shadow: 0 12px 28px rgba(69, 51, 29, .045); }
+.lesson-chrome .lesson-soft { border: 1px solid rgba(116, 138, 111, .22) !important; border-radius: 16px !important; background: #edf1e9 !important; }
+.lesson-chrome .lesson-eyebrow { color: #a15f3c; font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.lesson-chrome input[type="text"], .lesson-chrome textarea { border: 1px solid #e4ded4 !important; border-radius: 12px !important; background: #fffefa !important; color: #29251f; outline: none; transition: border-color .2s, box-shadow .2s; }
+.lesson-chrome input[type="text"]:focus, .lesson-chrome textarea:focus { border-color: #5f8f86 !important; box-shadow: 0 0 0 3px rgba(17, 94, 89, .12); }
+.lesson-chrome button { border-radius: 999px !important; font-family: var(--font-jakarta), sans-serif; font-weight: 700; transition: transform .2s, background .2s, box-shadow .2s; }
+.lesson-chrome button.bg-teal-800 { background: #292722; color: #fffdf8; box-shadow: 0 6px 14px rgba(41, 39, 34, .13); }
+.lesson-chrome button.bg-teal-800:hover:not(:disabled) { background: #403b34; transform: translateY(-1px); }
+.lesson-chrome button.bg-stone-200 { background: #e8dfd0; color: #3a352e; }
+.lesson-chrome button.border-stone-300 { border-color: #d9d0c1; background: rgba(255, 253, 249, .7); }
+.lesson-chrome button.hover\:bg-stone-100:hover:not(:disabled) { background: #efe8da; }
+.lesson-chrome [role="status"] { border-radius: 14px !important; line-height: 1.55; }
+.lesson-stepper li { font-weight: 700; letter-spacing: -.01em; }
+.lesson-stepper li[aria-current="step"] { background: #292722 !important; color: #fffdf8 !important; }
+.lesson-stepper li.bg-teal-100 { background: #dcebe6 !important; color: #1d5a52 !important; }
+.lesson-stepper li.bg-stone-100 { background: #efe8da !important; color: #8a8174 !important; }
+.lesson-caption { border-left: 4px solid #2a7f76 !important; border-radius: 14px !important; background: #fffdf9 !important; font-size: 15px; line-height: 1.6; box-shadow: 0 8px 20px rgba(69, 51, 29, .05); }
+.lesson-toolbar { gap: 10px; }
+@media (max-width: 520px) {
+  .lesson-chrome section, .lesson-chrome .lesson-card { padding: 16px !important; }
+  .lesson-toolbar button { flex: 1 1 auto; }
+}
