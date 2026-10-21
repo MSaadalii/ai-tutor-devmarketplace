@@ -45,10 +45,10 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form onSubmit={onSubmit} className="auth-form space-y-4">
       {error ? <AuthNotice kind="error">{error}</AuthNotice> : null}
       <input
-        className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
+        className="auth-field w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
         placeholder="Email"
         type="email"
         autoComplete="email"
@@ -65,7 +65,7 @@ export function LoginForm() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      <Button type="submit" className="w-full" disabled={busy}>
+      <Button type="submit" className="auth-submit w-full" disabled={busy}>
         {busy ? "Signing in…" : "Continue"}
       </Button>
     </form>

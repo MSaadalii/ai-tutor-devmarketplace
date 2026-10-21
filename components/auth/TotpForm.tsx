@@ -135,7 +135,7 @@ export function TotpForm() {
   }
 
   return (
-    <form onSubmit={onVerify} className="space-y-4">
+    <form onSubmit={onVerify} className="auth-form space-y-4">
       {mode === "enroll" ? (
         <div className="space-y-3">
           <p className="text-sm text-stone-600">
@@ -165,7 +165,7 @@ export function TotpForm() {
       {error ? <AuthNotice kind="error">{error}</AuthNotice> : null}
 
       <input
-        className="w-full rounded-md border border-stone-300 px-3 py-2 text-center text-lg tracking-[0.5em]"
+        className="auth-field auth-code w-full rounded-md border border-stone-300 px-3 py-2 text-center text-lg tracking-[0.5em]"
         placeholder="000000"
         inputMode="numeric"
         autoComplete="one-time-code"
@@ -175,7 +175,7 @@ export function TotpForm() {
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
       />
-      <Button type="submit" className="w-full" disabled={busy}>
+      <Button type="submit" className="auth-submit w-full" disabled={busy}>
         {busy ? "Verifying…" : mode === "enroll" ? "Enable 2FA" : "Verify"}
       </Button>
       <p className="text-center text-xs text-stone-500">
