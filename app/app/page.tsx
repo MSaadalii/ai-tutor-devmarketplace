@@ -23,6 +23,7 @@ export default function AppHomePage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [topicBrief, setTopicBrief] = useState("");
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured()) {
@@ -111,6 +112,30 @@ export default function AppHomePage() {
     router.push(`/lesson/${row.id}`);
   }
 
+  async function startBrief() {
+    const brief = topicBrief.trim();
+    if (!brief || topicBrief.length > 2000) {
+      setError("Enter a topic brief of 1–2,000 characters.");
+      return;
+    }
+    if (!userId || creating !== null) return;
+    setCreating("topic-brief");
+    setError(null);
+    try {
+      const { data, error: insertError } = await getSupabaseBrowserClient()
+        .from("learning_sessions")
+        .insert({ user_id: userId, topic_brief: brief, pack_id: null,
+          pack_version: null, language: "en" })
+        .select().single();
+      if (insertError) throw new Error(insertError.message);
+      router.push(`/lesson/${(data as LearningSessionRow).id}`);
+    } catch (e) {
+      setError(`Could not start topic lesson: ${e instanceof Error ? e.message : "Please retry."}`);
+    } finally {
+      setCreating(null);
+    }
+  }
+
   return (
     <PageShell actions={<SignOutButton />}>
       <div className="space-y-6">
@@ -156,9 +181,18 @@ export default function AppHomePage() {
               </li>
             ))}
           </ul>
-          <div className="rounded-lg border border-dashed border-stone-300 bg-white/60 p-4 text-sm text-stone-600">
-            Topic brief paste (≤2,000 chars) — wired in a later phase.
-          </div>
+          <form className="space-y-3 rounded-lg border border-stone-300 bg-white p-4 text-sm"
+            onSubmit={(event) => { event.preventDefault(); void startBrief(); }}>
+            <label htmlFor="topic-brief" className="block font-medium">Or start from a topic brief</label>
+            <textarea id="topic-brief" required maxLength={2000} rows={4}
+              value={topicBrief} onChange={(event) => setTopicBrief(event.target.value)}
+              placeholder="What would you like to learn? Add your level and what is confusing."
+              className="w-full rounded-md border border-stone-300 p-3" />
+            <p className="text-xs text-stone-500">{topicBrief.length}/2000 characters · Introductory AI lesson, no quiz or grades.</p>
+            <Button type="submit" disabled={!userId || creating !== null || !topicBrief.trim()}>
+              {creating === "topic-brief" ? "Starting…" : "Start topic lesson"}
+            </Button>
+          </form>
         </section>
 
         <section className="space-y-3">
@@ -169,7 +203,7 @@ export default function AppHomePage() {
             <p className="text-sm text-stone-500">Loading…</p>
           ) : sessions.length === 0 ? (
             <p className="text-sm text-stone-500">
-              No sessions yet — start the Binomial Squares pack above.
+              No sessions yet — start a pack or enter a topic brief above.
             </p>
           ) : (
             <ul className="space-y-2">

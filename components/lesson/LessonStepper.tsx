@@ -11,12 +11,14 @@ const STEPS = [
 
 export function LessonStepper({
   activeIndex = 0,
+  brief = false,
 }: {
   activeIndex?: number;
+  brief?: boolean;
 }) {
   return (
     <ol className="flex flex-wrap gap-2">
-      {STEPS.map((label, i) => (
+      {(brief ? ["Board", "Ask (optional)", "Ungraded summary"] : STEPS).map((label, i) => (
         <li
           key={label}
           aria-current={i === activeIndex ? "step" : undefined}

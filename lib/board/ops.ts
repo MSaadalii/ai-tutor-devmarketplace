@@ -305,8 +305,11 @@ export function buildSceneFromSteps(
   upToIndex: number,
   aLabel = "x",
   bLabel = "3",
+  sceneKind: "pack" | "brief" = "pack",
 ): BoardScene {
-  let scene = buildAreaModelScene(aLabel, bLabel);
+  let scene: BoardScene = sceneKind === "brief"
+    ? { elements: [], highlights: [] }
+    : buildAreaModelScene(aLabel, bLabel);
   for (let i = 0; i <= upToIndex && i < steps.length; i++) {
     scene = applyOperation(scene, steps[i].operation);
   }

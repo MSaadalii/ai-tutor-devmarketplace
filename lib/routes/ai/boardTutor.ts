@@ -51,25 +51,48 @@ export async function handleBoardTutor(request: Request) {
       language,
     } = parsed.data;
 
+    // The owned stored session is authoritative, never a client-supplied brief.
+    const { data: session, error: sessionError } = await supabase
+      .from("learning_sessions").select("pack_id, topic_brief")
+      .eq("id", session_id).eq("user_id", user.id).single();
+    if (sessionError || !session) throw new Error("Could not load the lesson context.");
+    if (!session.pack_id && !session.topic_brief?.trim()) {
+      return NextResponse.json({ error: "This lesson has no topic brief." }, { status: 400 });
+    }
+
+    let boardContext: unknown;
+    if (!session.pack_id && mode === "answer") {
+      const { data: narration, error: contextError } = await supabase
+        .from("narration_steps").select("operation, spoken_line")
+        .eq("session_id", session_id).eq("language", language)
+        .order("step_order", { ascending: true });
+      if (contextError) throw new Error("Could not load the topic board context.");
+      boardContext = narration ?? [];
+    }
+
     const result = await runBoardTutor({
       sessionId: session_id,
       userId: user.id,
       problem,
-      misconceptionId: misconception_id,
+      topicBrief: session.pack_id ? undefined : session.topic_brief,
+      misconceptionId: session.pack_id ? misconception_id : undefined,
       mode,
       question,
       selectedElementIds: selected_element_ids,
+      boardContext,
       language,
       supabase,
     });
 
     try {
       if (mode === "teach" && result.steps.length > 0) {
-        await supabase
+        const { error: deleteError } = await supabase
           .from("narration_steps")
           .delete()
           .eq("session_id", session_id)
           .eq("language", language);
+
+        if (deleteError && !session.pack_id) throw new Error(`Could not replace topic narration: ${deleteError.message}`);
 
         const rows = result.steps.map((step, idx) => ({
           session_id,
@@ -80,13 +103,20 @@ export async function handleBoardTutor(request: Request) {
           language,
         }));
 
-        await supabase.from("narration_steps").insert(rows);
+        const { error: narrationError } = await supabase.from("narration_steps").insert(rows);
+        if (narrationError && !session.pack_id) throw new Error(`Could not save topic narration: ${narrationError.message}`);
+
+        if (!session.pack_id) {
+          const { error: languageError } = await supabase.from("learning_sessions")
+            .update({ language }).eq("id", session_id).eq("user_id", user.id);
+          if (languageError) throw new Error(`Could not save lesson language: ${languageError.message}`);
+        }
 
         await supabase.from("attempts").insert({
           session_id,
           user_id: user.id,
           phase: "board",
-          prompt: problem,
+          prompt: session.pack_id ? problem : session.topic_brief,
           response: `${result.steps.length} steps`,
           correct: null,
           metadata: { step_count: result.steps.length, notes: result.notes },
@@ -105,6 +135,7 @@ export async function handleBoardTutor(request: Request) {
         });
       }
     } catch (persistError) {
+      if (!session.pack_id) throw persistError;
       console.error("Failed to persist board tutor result:", persistError);
     }
 

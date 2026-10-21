@@ -39,6 +39,14 @@ export async function handleQuizExplain(request: Request) {
     const denied = await requireOwnedSession(supabase, session_id, user.id);
     if (denied) return denied;
 
+    const { data: session, error: sessionError } = await supabase
+      .from("learning_sessions").select("pack_id")
+      .eq("id", session_id).eq("user_id", user.id).single();
+    if (sessionError || !session) throw new Error("Could not load lesson context.");
+    if (!session.pack_id) {
+      return NextResponse.json({ error: "Topic-brief lessons are ungraded; pack quizzes are not available." }, { status: 400 });
+    }
+
     const item = getQuizItem(item_seed);
     if (!item) {
       return NextResponse.json(

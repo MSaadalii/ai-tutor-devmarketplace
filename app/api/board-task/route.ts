@@ -35,6 +35,13 @@ export async function POST(request: Request) {
 
     const denied = await requireOwnedSession(supabase, session_id, user.id);
     if (denied) return denied;
+    const { data: session, error: sessionError } = await supabase
+      .from("learning_sessions").select("pack_id")
+      .eq("id", session_id).eq("user_id", user.id).single();
+    if (sessionError || !session) throw new Error("Could not load lesson context.");
+    if (!session.pack_id) {
+      return NextResponse.json({ error: "Topic-brief lessons have no pack board task." }, { status: 400 });
+    }
     const pack = getPack();
     const grade = gradeBoardTask(
       pack.boardTaskElementIds,

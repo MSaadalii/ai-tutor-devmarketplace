@@ -54,7 +54,7 @@ export function SvgBoard({
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         className="h-auto w-full rounded-lg border border-stone-200 bg-white"
         role="img"
-        aria-label="Area model whiteboard"
+        aria-label="Lesson whiteboard"
       >
         {scene.elements.map((el) => (
           <SvgElement

@@ -5,6 +5,7 @@ import {
 import { callGeminiJson, type GeminiRole } from "@/lib/ai/gemini";
 import { getPack } from "@/lib/packs/binomial_square";
 import { mergeTeachSteps } from "@/lib/ai/teachMerge";
+import { runBriefTutor } from "@/lib/ai/briefTutor";
 import type { NarrationStep } from "@/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -14,6 +15,8 @@ export type BoardTutorInput = {
   sessionId: string;
   userId: string;
   problem: string;
+  topicBrief?: string;
+  boardContext?: unknown;
   misconceptionId?: string;
   mode: BoardTutorMode;
   question?: string;
@@ -46,6 +49,7 @@ function isExhaustedValidationFailure(error: unknown): boolean {
 export async function runBoardTutor(
   input: BoardTutorInput,
 ): Promise<BoardTutorResult> {
+  if (input.topicBrief !== undefined) return runBriefTutor(input);
   const pack = getPack();
   const prompt =
     input.mode === "answer"

@@ -73,6 +73,20 @@ npm run dev     # walk the demo click path locally
 4. On the lesson page, submit the diagnostic answer (`x^2+9` is pre-filled), then press **Play explanation**. Captions are always visible. The board defaults to SVG (always works). Press **Try Excalidraw ↗** to switch to the sketch renderer; it auto-falls back to SVG if the module fails to load.
 5. Ask a board question, select the two `3x` regions, complete the quiz, and show the summary.
 
+## Topic-brief path (Core Phase 5)
+
+On `/app`, enter a nonblank topic brief (up to 2,000 characters) and choose **Start topic lesson**. The owned Supabase session stores `topic_brief` with `pack_id: null` using the existing schema. Press **Play explanation** immediately: no Detective, forced misconception, or pack board task. Gemini teaches from the stored brief on an initially empty SVG board (Excalidraw remains opt-in), with captions and optional Web Speech. Thin briefs should elicit stated assumptions/uncertainty; invalid drawings are retried once, then shown as a recoverable error, never replaced with binomial operations.
+
+Ask a text question, or finish with **Ungraded summary** after viewing the explanation. Brief lessons have no quiz, score, or mastery claim; summaries quote saved narration. Saved brief narration can be replayed without another Gemini call after reopening; summaries are restored from Supabase. Existing Supabase configuration/migration is required; no new schema or secrets were added. Pack lessons retain the Judge path above.
+
+Manual checks (human-run; no shell/browser verification was available during this change):
+- Blank/whitespace brief cannot start; 2,000 characters accepted, input cannot exceed the limit.
+- Try “photosynthesis, introductory biology” and a thin “physics” brief: no binomial scene, clear narration and uncertainty for the thin brief.
+- Ask, pause/replay, finish: summary contains actual saved narration and an ungraded notice, with no pack scores.
+- Reload/open the saved brief lesson; replay and summary remain available. A second account cannot open it.
+- Missing Gemini config/invalid output shows an error, not a seeded pack lesson. A brief session cannot call either quiz API alias for pack grading.
+- Regression: Binomial Squares → Diagnose → Play → Ask → 2bx task → Quiz → Summary.
+
 ## Key paths
 
 - `components/layout/PageShell.tsx` — shared page chrome used by every page.

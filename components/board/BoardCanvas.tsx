@@ -16,6 +16,7 @@ const ExcalidrawBoard = dynamic<ExcalidrawBoardProps>(
 
 export type BoardCanvasProps = {
   steps?: NarrationStep[];
+  sceneKind?: "pack" | "brief";
   currentStepIndex?: number;
   selectedElementIds?: string[];
   onElementClick?: (elementId: string) => void;
@@ -48,6 +49,7 @@ export type BoardCanvasProps = {
  */
 export function BoardCanvas({
   steps = [],
+  sceneKind = "pack",
   currentStepIndex = -1,
   selectedElementIds = [],
   onElementClick,
@@ -88,8 +90,8 @@ export function BoardCanvas({
   }, []);
 
   const scene = useMemo(
-    () => buildSceneFromSteps(steps, currentStepIndex),
-    [steps, currentStepIndex],
+    () => buildSceneFromSteps(steps, currentStepIndex, "x", "3", sceneKind),
+    [steps, currentStepIndex, sceneKind],
   );
 
   const hasSteps = steps.length > 0;
