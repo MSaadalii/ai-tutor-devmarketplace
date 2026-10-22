@@ -19,6 +19,7 @@
     {
       "id": "missing_middle_term",
       "label": "Forgot the 2ab middle term",
+      "claim": "I think (x+3)^2 is just x^2 + 9, because you square each part and there is no middle term.",
       "probes": [
         "What do you get when you write (x+3)(x+3) before simplifying?",
         "In (a+b)^2, why is there a 2ab term?"
@@ -27,6 +28,7 @@
     {
       "id": "distribution_slip",
       "label": "Distribution or sign slip",
+      "claim": "I think (x+3)^2 is x^2 + 3x + 9, because x times x is x^2, x times 3 is 3x, and 3 times 3 is 9, and that's all.",
       "probes": [
         "Can you multiply x+3 by x, then by 3, and add the results?",
         "What sign does each partial product carry?"
@@ -35,6 +37,7 @@
     {
       "id": "power_rule_misuse",
       "label": "Applied (a+b)^n = a^n + b^n",
+      "claim": "I believe the square just goes onto each term, so (a+b)^2 always equals a^2 + b^2.",
       "probes": [
         "Does the power apply to every term inside the bracket separately?",
         "Check (1+1)^2. Is it equal to 1^2 + 1^2?"

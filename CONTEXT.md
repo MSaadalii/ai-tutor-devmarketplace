@@ -226,3 +226,18 @@ QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the l
 - Speech: Vapi when connected, else Web Speech, else captions only. Mic via `listenOnce`; text always available; 60s timer per question.
 - If scoring fails the UI says "Could not score" — no fake pass. Briefs are labelled ungraded topic practice. Viva failures never block board, quiz or summary.
 - Gemini use is disclosed under the `viva` role in `model_runs`.
+
+## Voice polish (VOICE-1, VOICE-2)
+- `handleVoiceQuestion` (Raise hand; text Ask returns the answer only, no speech) now awaits `connectVapi()` then `speakVapi(answer)`, falling back to `speakLine`. Captions stay on.
+- `MIN_DWELL_MS` 1800→500 in `playSteps`; `SILENCE_MS` 700→150 in `lib/voice/vapi.ts`.
+- Vapi end detection: chunk arrival cancels any pending end; end is scheduled only from the last source `onended` (no active sources) or Vapi stopped/finished JSON, debounced, re-checked against `nextTime`/active sources, and `onEnd` fires once. `cancelVapi` still runs on Pause, Raise hand and each new step; `playbackId` stays authoritative.
+- Not built/run here.
+
+## Stretch: Teach the AI (teach-back)
+- `components/lesson/TeachAiPanel.tsx` is wired in `LessonClient` beside the viva panel. The "Teach the AI" button appears once the board explanation has finished playing, for both packs and briefs. It never gates quiz, summary or viva.
+- `POST /api/ai/teach-ai` (`lib/routes/ai/teachAi.ts`, Zod in `lib/ai/teachAi.ts`), actions: `plant`, `score`, `save`.
+  - `plant`, pack: uses the `claim` of a misconception in `content/packs/binomial_square/v1.json` (the session's detected misconception ID if it has a claim, else the first with a claim). Brief: Gemini invents one wrong belief from the topic brief, Zod-validated; the UI labels it ungraded practice.
+  - `score`: Gemini rubric `{pass, feedback, confidence}`, Zod-validated, plus up to 2 optional `add_text` ops. Each op is validated individually and invalid ones are dropped. Ops are drawn on the board only for briefs (as namespaced answer steps).
+  - `save`: inserts `attempts` with `phase='teach_ai'`, `correct=null`, metadata `{planted, explanation, rubric, kind, ungraded, input, language}`. The check constraint already allows `teach_ai`, so no migration was added.
+- The statement is spoken via Vapi when ready, else Web Speech, with captions always on. The student answers by text or mic (`listenOnce`). If scoring fails the UI shows "Could not score" and no pass is recorded.
+- Not built/run here.
