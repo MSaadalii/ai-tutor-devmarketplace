@@ -216,3 +216,13 @@ All 8 tables have RLS enabled. Child insert/update policies verify the session b
 Phase 16: Landing hero pairs existing `/landing/tutor-hero.png` with BoardMock using warm rounded blending and desktop overlap; character hides on narrow mobile. UI-only.
 
 QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the lesson question handler's return type.
+
+
+## Stretch: Live viva
+
+- `components/lesson/VivaPanel.tsx` (wired in `LessonClient`): "Start viva" appears for packs after the quiz is complete (beside summary) and for briefs once narration has finished playing (same moment as "Finish · Ungraded summary"). No quiz or 2bx is needed for briefs.
+- `POST /api/ai/viva` (`lib/routes/ai/viva.ts`, Zod in `lib/ai/viva.ts`), actions: `questions` (pack: built-in bank; brief: Gemini from topic brief + saved spoken lines), `score` (Gemini rubric: correct/partial/incorrect, feedback, confidence), `save`.
+- Persistence: `attempts` with `phase='viva'` (already allowed by the check constraint in `0001_core_schema.sql`; no new migration), `correct=null`, metadata `{kind, ungraded, provider, questions, items}`.
+- Speech: Vapi when connected, else Web Speech, else captions only. Mic via `listenOnce`; text always available; 60s timer per question.
+- If scoring fails the UI says "Could not score" — no fake pass. Briefs are labelled ungraded topic practice. Viva failures never block board, quiz or summary.
+- Gemini use is disclosed under the `viva` role in `model_runs`.

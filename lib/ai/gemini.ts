@@ -38,7 +38,7 @@ export function getGeminiModel(system?: string) {
   });
 }
 
-export type GeminiRole = "detective" | "board_tutor" | "quiz_coach" | "summary";
+export type GeminiRole = "detective" | "board_tutor" | "quiz_coach" | "summary" | "viva";
 
 export type GeminiCallOptions<T extends ZodTypeAny> = {
   sessionId: string;
