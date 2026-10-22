@@ -446,10 +446,19 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   }
 
   function handleTeachOps(ops: BoardOperation[]) {
-    const prefix = `teach_${Date.now()}_`;
-    const additions = ops.map((op, i) => {
-      const p = { ...op.payload };
+    // Additive only: answer_ prefix, offset below everything already drawn.
+    const prefix = `answer_teach_${Date.now()}_`;
+    const maxY = [...steps, ...answerSteps].reduce((m, s) => {
+      const p = s.operation.payload as Record<string, unknown>;
+      if (s.operation.type !== "add_text" && s.operation.type !== "add_shape") return m;
+      const h = s.operation.type === "add_text" ? 28 : Number(p.height ?? 80);
+      return Math.max(m, Number(p.y ?? 0) + h);
+    }, 0);
+    const base = Math.max(maxY, 380) + 24;
+    const additions = ops.filter((op) => op.type === "add_text").map((op, i) => {
+      const p = { ...op.payload } as Record<string, unknown>;
       if (typeof p.id === "string") p.id = prefix + p.id;
+      p.y = base + i * 32;
       return { order: 1000 + i, operation: { ...op, payload: p }, spokenLine: "", language } as NarrationStep;
     });
     setAnswerSteps((prev) => [...prev, ...additions]);

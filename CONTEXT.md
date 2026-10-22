@@ -240,6 +240,7 @@ QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the l
   - `score`: Gemini rubric `{pass, feedback, confidence}`, Zod-validated, plus up to 2 optional `add_text` ops. Each op is validated individually and invalid ones are dropped. Ops are drawn on the board only for briefs (as namespaced answer steps).
   - `save`: inserts `attempts` with `phase='teach_ai'`, `correct=null`, metadata `{planted, explanation, rubric, kind, ungraded, input, language}`. The check constraint already allows `teach_ai`, so no migration was added.
 - The statement is spoken via Vapi when ready, else Web Speech, with captions always on. The student answers by text or mic (`listenOnce`). If scoring fails the UI shows "Could not score" and no pass is recorded.
+- Brief teach-back ops are additive only: `answer_teach_` ID prefix and y-offset below the existing scene (`handleTeachOps` in LessonClient); teach IDs never touched.
 - Not built/run here.
 
 ## Board polish + answer append (latest)
