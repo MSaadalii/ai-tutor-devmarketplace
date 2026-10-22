@@ -25,6 +25,7 @@ import { QuestionPanel } from "@/components/lesson/QuestionPanel";
 import { BoardTaskPanel } from "@/components/lesson/BoardTaskPanel";
 import { QuizPanel, type QuizResult } from "@/components/lesson/QuizPanel";
 import { SummaryPanel } from "@/components/lesson/SummaryPanel";
+import { VivaPanel } from "@/components/lesson/VivaPanel";
 import type { LearningSessionRow, NarrationStep, AppLanguage } from "@/types";
 
 const PHASE_INDEX: Record<string, number> = {
@@ -655,6 +656,12 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             {!summary ? <Button disabled={playing || steps.length === 0 || currentStepIndex < steps.length - 1}
               onClick={() => void handleFinishQuiz()}>Finish · Ungraded summary</Button> : null}
           </div>
+        ) : null}
+
+        {(isBrief
+          ? steps.length > 0 && !playing && currentStepIndex >= steps.length - 1
+          : activePhase === "summary_ready" || (summary !== null && quizResults.length === pack.quiz.length)) ? (
+          <VivaPanel sessionId={sessionId} language={language} isBrief={isBrief} onCaption={setCaption} />
         ) : null}
 
         {summary ? (
