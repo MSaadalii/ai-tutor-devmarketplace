@@ -10,7 +10,7 @@ export function QuestionPanel({
 }: {
   selectedElementIds: string[];
   answerText: string | null;
-  onAsk: (text: string) => Promise<void>;
+  onAsk: (text: string) => Promise<void | string | null>;
 }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);

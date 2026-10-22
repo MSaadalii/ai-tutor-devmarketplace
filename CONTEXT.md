@@ -212,3 +212,5 @@ All 8 tables have RLS enabled. Child insert/update policies verify the session b
 
 
 Phase 16: Landing hero pairs existing `/landing/tutor-hero.png` with BoardMock using warm rounded blending and desktop overlap; character hides on narrow mobile. UI-only.
+
+QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the lesson question handler's return type.
