@@ -209,3 +209,6 @@ All 8 tables have RLS enabled. Child insert/update policies verify the session b
 
 ## Raise hand (barge-in)
 - `components/lesson/RaiseHand.tsx` + `lib/voice/recognize.ts`: Raise hand stops Vapi/Web Speech narration (bumps playbackId), listens via browser Web Speech Recognition, shows the transcript, and submits it through the same `/api/ai/board-tutor` answer path as text Ask. The answer shows in captions/answer area and is spoken via Web Speech. Mic denied/unsupported shows a message; text Ask still works. Press Play to resume. No board ops/grading changes.
+
+
+Phase 16: Landing hero pairs existing `/landing/tutor-hero.png` with BoardMock using warm rounded blending and desktop overlap; character hides on narrow mobile. UI-only.
