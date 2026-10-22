@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { LandingNav } from "@/components/landing/LandingNav";
-import { BoardMock } from "@/components/landing/BoardMock";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 async function isLoggedIn(): Promise<boolean> {
@@ -32,7 +31,7 @@ export default async function HomePage() {
     <div className="landing min-h-screen">
       <LandingNav loggedIn={loggedIn} />
       <main>
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:py-20">
+        <section className="mx-auto grid max-w-6xl items-center gap-6 px-5 py-12 lg:grid-cols-[0.75fr_1.25fr] lg:gap-6 lg:py-20">
           <div className="space-y-6">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
               Visual AI Tutor
@@ -59,12 +58,16 @@ export default async function HomePage() {
               ))}
             </ul>
           </div>
-          <div className="landing-hero-visual">
+          <div className="landing-hero-scene">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/landing/tutor-hero.png" alt="AI tutor character" className="landing-hero-tutor" />
-            <div className="landing-hero-board">
-              <BoardMock />
-            </div>
+            <img
+              src="/landing/hero-scene.png"
+              alt="Tutor teaching binomial squares on a live board with captions"
+              className="landing-hero-scene-img"
+              width={1586}
+              height={878}
+              decoding="async"
+            />
           </div>
         </section>
 
