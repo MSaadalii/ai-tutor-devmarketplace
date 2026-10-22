@@ -20,7 +20,7 @@ let pending: { token: number; onEnd: () => void; onError: (e: Error) => void } |
 let timers: ReturnType<typeof setTimeout>[] = [];
 let tokenSeq = 0;
 let gotAudio = false;
-let lastChunk = 0;
+let endTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function isVapiReady(): boolean {
   return !disabled && ws !== null && ws.readyState === WebSocket.OPEN;
@@ -35,7 +35,10 @@ export function cancelVapi(): void {
   pending = null;
   tokenSeq += 1;
   clearTimers();
+  if (endTimer) clearTimeout(endTimer);
+  endTimer = null;
   sources.forEach((s) => {
+    s.onended = null;
     try {
       s.stop();
     } catch {
@@ -78,23 +81,40 @@ function playChunk(buf: ArrayBuffer) {
   nextTime = start + ab.duration;
   sources.push(src);
   gotAudio = true;
-  lastChunk = Date.now();
-  watchEnd();
+  src.onended = () => {
+    if (sources[sources.length - 1] === src) scheduleEnd(SILENCE_MS);
+  };
+  scheduleEnd(SILENCE_MS);
 }
 
-function watchEnd() {
+/** Fires onEnd exactly once, after queued audio finishes plus a pad. */
+function scheduleEnd(padMs: number) {
   const p = pending;
   if (!p) return;
-  clearTimers();
-  const wait = Math.max(0, ((nextTime - (ctx?.currentTime ?? 0)) * 1000) + SILENCE_MS);
-  timers.push(
-    setTimeout(() => {
-      if (pending && pending.token === p.token && Date.now() - lastChunk >= SILENCE_MS) {
-        pending = null;
-        p.onEnd();
-      } else if (pending && pending.token === p.token) watchEnd();
-    }, wait),
-  );
+  if (endTimer) clearTimeout(endTimer);
+  const wait = Math.max(0, (nextTime - (ctx?.currentTime ?? 0)) * 1000) + padMs;
+  endTimer = setTimeout(() => {
+    endTimer = null;
+    if (pending && pending.token === p.token) {
+      pending = null;
+      p.onEnd();
+    }
+  }, wait);
+}
+
+function handleJson(raw: string) {
+  if (!pending || !gotAudio) return;
+  try {
+    const m = JSON.parse(raw) as { type?: string; status?: string; role?: string };
+    const stopped =
+      (m.type === "speech-update" && m.status === "stopped") ||
+      (m.type === "status-update" && m.status === "stopped") ||
+      m.type === "saying-finished" ||
+      m.type === "say-finished";
+    if (stopped && m.role !== "user") scheduleEnd(250);
+  } catch {
+    /* ignore non-JSON */
+  }
 }
 
 /** Opens the call once. Never throws; resolves false when unavailable. */
@@ -123,6 +143,7 @@ export async function connectVapi(): Promise<boolean> {
     });
     socket.onmessage = (e) => {
       if (e.data instanceof ArrayBuffer) playChunk(e.data);
+      else if (typeof e.data === "string") handleJson(e.data);
     };
     socket.onclose = () => {
       if (ws === socket) {
@@ -155,7 +176,6 @@ export function speakVapi(
   const token = tokenSeq;
   pending = { token, onEnd, onError };
   gotAudio = false;
-  lastChunk = Date.now();
   ws.send(JSON.stringify({ type: "say", content: text, endCallAfterSpoken: false }));
   timers.push(
     setTimeout(() => {
