@@ -8,7 +8,7 @@
 import type { AppLanguage } from "@/types";
 
 const RATE = 16000;
-const SILENCE_MS = 700;
+const SILENCE_MS = 150;
 const FIRST_AUDIO_TIMEOUT_MS = 9000;
 
 let ws: WebSocket | null = null;
@@ -81,13 +81,16 @@ function playChunk(buf: ArrayBuffer) {
   nextTime = start + ab.duration;
   sources.push(src);
   gotAudio = true;
+  // New audio arrived: any pending end is stale (mid-utterance gap).
+  if (endTimer) clearTimeout(endTimer);
+  endTimer = null;
   src.onended = () => {
-    if (sources[sources.length - 1] === src) scheduleEnd(SILENCE_MS);
+    sources = sources.filter((s) => s !== src);
+    if (sources.length === 0) scheduleEnd(SILENCE_MS);
   };
-  scheduleEnd(SILENCE_MS);
 }
 
-/** Fires onEnd exactly once, after queued audio finishes plus a pad. */
+/** Fires onEnd exactly once, only when no audio is queued or playing (debounced). */
 function scheduleEnd(padMs: number) {
   const p = pending;
   if (!p) return;
@@ -95,6 +98,10 @@ function scheduleEnd(padMs: number) {
   const wait = Math.max(0, (nextTime - (ctx?.currentTime ?? 0)) * 1000) + padMs;
   endTimer = setTimeout(() => {
     endTimer = null;
+    if (sources.length > 0 || (ctx && nextTime > ctx.currentTime + 0.01)) {
+      scheduleEnd(padMs);
+      return;
+    }
     if (pending && pending.token === p.token) {
       pending = null;
       p.onEnd();
@@ -111,7 +118,7 @@ function handleJson(raw: string) {
       (m.type === "status-update" && m.status === "stopped") ||
       m.type === "saying-finished" ||
       m.type === "say-finished";
-    if (stopped && m.role !== "user") scheduleEnd(250);
+    if (stopped && m.role !== "user") scheduleEnd(SILENCE_MS);
   } catch {
     /* ignore non-JSON */
   }

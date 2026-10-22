@@ -26,7 +26,8 @@ import { BoardTaskPanel } from "@/components/lesson/BoardTaskPanel";
 import { QuizPanel, type QuizResult } from "@/components/lesson/QuizPanel";
 import { SummaryPanel } from "@/components/lesson/SummaryPanel";
 import { VivaPanel } from "@/components/lesson/VivaPanel";
-import type { LearningSessionRow, NarrationStep, AppLanguage } from "@/types";
+import { TeachAiPanel } from "@/components/lesson/TeachAiPanel";
+import type { LearningSessionRow, NarrationStep, AppLanguage, BoardOperation } from "@/types";
 
 const PHASE_INDEX: Record<string, number> = {
   diagnose: 0,
@@ -296,7 +297,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     setCaption(step.spokenLine);
 
     const stepStartTime = Date.now();
-    const MIN_DWELL_MS = 1800;
+    const MIN_DWELL_MS = 500;
 
     const advance = () => {
       if (playbackId === playbackIdRef.current) {
@@ -383,7 +384,13 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     const answer = await handleAskQuestion(text);
     if (answer) {
       setCaption(answer);
-      speakLine(answer, language, undefined, () => {});
+      const web = () => speakLine(answer, language, undefined, () => {});
+      await connectVapi().catch(() => false);
+      if (isVapiReady()) {
+        speakVapi(answer, language, () => {}, web);
+      } else {
+        web();
+      }
     }
   }
 
@@ -423,6 +430,16 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
       }
     });
     return answer;
+  }
+
+  function handleTeachOps(ops: BoardOperation[]) {
+    const prefix = `teach_${Date.now()}_`;
+    const additions = ops.map((op, i) => {
+      const p = { ...op.payload };
+      if (typeof p.id === "string") p.id = prefix + p.id;
+      return { order: 1000 + i, operation: { ...op, payload: p }, spokenLine: "", language } as NarrationStep;
+    });
+    setAnswerSteps((prev) => [...prev, ...additions]);
   }
 
   async function handleTaskSubmit() {
@@ -662,6 +679,16 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           ? steps.length > 0 && !playing && currentStepIndex >= steps.length - 1
           : activePhase === "summary_ready" || (summary !== null && quizResults.length === pack.quiz.length)) ? (
           <VivaPanel sessionId={sessionId} language={language} isBrief={isBrief} onCaption={setCaption} />
+        ) : null}
+
+        {steps.length > 0 && !playing && currentStepIndex >= steps.length - 1 ? (
+          <TeachAiPanel
+            sessionId={sessionId}
+            language={language}
+            isBrief={isBrief}
+            onCaption={setCaption}
+            onBoardOps={isBrief ? handleTeachOps : undefined}
+          />
         ) : null}
 
         {summary ? (

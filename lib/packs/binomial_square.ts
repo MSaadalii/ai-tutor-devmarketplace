@@ -4,6 +4,7 @@ import type { AppLanguage } from "@/types";
 export type Misconception = {
   id: string;
   label: string;
+  claim?: string;
   probes: string[];
 };
 
