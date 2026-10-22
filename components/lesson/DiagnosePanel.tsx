@@ -66,7 +66,7 @@ export function DiagnosePanel({
           className="h-10 flex-1 rounded-md border border-stone-300 px-3 text-sm"
         />
         <Button onClick={() => void handleSubmit()} disabled={loading || !answer}>
-          {loading ? "Diagnosing…" : "Submit"}
+          {loading ? <><span className="warm-spinner" aria-hidden="true" /> Diagnosing…</> : "Submit"}
         </Button>
       </div>
 
@@ -82,7 +82,7 @@ export function DiagnosePanel({
             className="h-10 w-full rounded-md border border-stone-300 px-3 text-sm"
           />
           <Button onClick={() => void handleSubmit()} disabled={loading || !currentProbeAnswer}>
-            {loading ? "Diagnosing…" : "Continue diagnosis"}
+            {loading ? <><span className="warm-spinner" aria-hidden="true" /> Diagnosing…</> : "Continue diagnosis"}
           </Button>
         </div>
       ) : null}

@@ -8,6 +8,7 @@ This document lists the AI services, models, and tools used in the product.
 |---------|-------------------|---------|
 | Google Gemini API | `gemini-2.5-flash-preview-05-20` (default, override via `GEMINI_MODEL`) | Misconception diagnosis, board tutoring, quiz explanation |
 | Web Speech API | Browser-native `speechSynthesis` | Core narration TTS in English and Urdu |
+| Web Speech API | Browser-native `SpeechRecognition` (may be processed by the browser vendor's cloud service) | Raise hand voice questions; transcript is sent to the board tutor |
 | Vapi | Voice assistant (websocket transport, optional via `VAPI_API_KEY` + `VAPI_ASSISTANT_ID`, server-only) | Narrates Play `spokenLine`s; falls back to Web Speech on any failure |
 | Uplift AI | Cloud TTS (optional, when `UPLIFT_AI_API_KEY` configured) | Urdu TTS fallback when browser voices are unavailable |
 

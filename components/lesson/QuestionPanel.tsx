@@ -37,7 +37,7 @@ export function QuestionPanel({
           className="h-10 flex-1 rounded-md border border-stone-300 px-3 text-sm"
         />
         <Button onClick={() => void handleAsk()} disabled={loading || !text}>
-          Ask
+          {loading ? <><span className="warm-spinner" aria-hidden="true" /> Asking…</> : "Ask"}
         </Button>
       </div>
       {answerText ? (
