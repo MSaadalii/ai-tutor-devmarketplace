@@ -156,7 +156,7 @@ npm run dev     # walk the demo click path
 3. Deploy → add the Vercel URL to Supabase Redirect URLs.
 4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play → ask → 2bx task → quiz → summary. Sign out and sign in as a second account — confirm first account's lessons are not listed.
 
-**Live URL:** _fill in after the first Vercel deploy._
+**Live URL:** https://ai-tutor-devmarketplace.vercel.app/
 
 ## Judge E2E — checks to run on the live URL (or locally)
 1. Sign in → `/app` → Start on Binomial Squares → `/lesson/<id>`.
