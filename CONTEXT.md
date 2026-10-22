@@ -245,3 +245,9 @@ QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the l
 
 ## Board polish + answer append (latest)
 `SvgBoard.tsx` repaints the area model (distinct beige/teal/sage region fills, stronger borders, centered labels, `x²` formatting), single exclusive amber active highlight with pulse, subtle step pill, wider (max 720px) board whose viewBox height grows to fit appended answer content, CSS-only enter fade respecting `prefers-reduced-motion`. Element IDs and grading unchanged. Topic-brief Ask answers: `briefTutor` strips non-add ops server-side; `LessonClient` keeps additive-only, `answer_`-prefixed, below-the-scene offset. Excalidraw untouched. Not built/run here.
+
+
+## Final pass (docs + ship blockers)
+- Docs made judge-ready: `README.md` now leads with the **live Vercel URL** (https://ai-tutor-devmarketplace.vercel.app/), a one-line **Judge path**, and the two **DevMarketplace gig links** (TOTP gate `f77395e7-…`, Zod board ops `a69aec46-…`); the two "Live URL: fill in" placeholders are filled.
+- `AI_DISCLOSURE.md` refreshed: Gemini default `gemini-3.5-flash-lite` (override `GEMINI_MODEL`), roles `detective`/`board_tutor`/`quiz_coach`/`summary`/`viva`/`teach_ai`, Vapi + Web Speech (TTS + SpeechRecognition), Uplift AI fallback, and DevMarketplace coding-agent tools + the two gigs.
+- Build blocker review: `QuestionPanel.onAsk` is already `(text) => Promise<void | string | null>` and `LessonClient` passes `handleAskQuestion` (`Promise<string | null>`) — assignable, no TS error. teach-ai route/lib imports (`plantedSchema`, `teachRubricSchema`, `teachScoreSchema`, `validOps`, `getPack`, `getMisconception`) all exist and type-check. No new features, no deps, no touch to voice polish, PageShell, landing, viva/Teach-AI rewrites, or board viz. `npm run build` not executed here (no shell); human reruns before redeploy.

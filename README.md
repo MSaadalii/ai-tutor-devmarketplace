@@ -1,6 +1,16 @@
 # Visual AI Tutor
 
-Live whiteboard tutor for STEM students: Gemini returns validated board steps, the lesson draws them with captions and optional Web Speech narration, then continues through board Q&A, the 2bx task, quiz, and summary.
+Live whiteboard tutor for STEM students: Gemini returns validated board steps, the lesson draws them with captions and optional Vapi / Web Speech narration, then continues through board Q&A, the 2bx task, quiz, summary, a live viva, and Teach-the-AI.
+
+**Live app:** https://ai-tutor-devmarketplace.vercel.app/
+
+**Judge path (one line):** open the live URL → Sign up → set up the TOTP code → `/app` → **Start** on *Binomial Squares* → submit the pre-filled diagnosis `x^2 + 9` → **Play explanation** → **Ask** a board question → select the two `3x` regions (2bx task) → complete the **quiz** → view the **summary** (then optionally **Start viva** / **Teach the AI**).
+
+**DevMarketplace gigs used (reusable patterns):**
+- Supabase TOTP MFA gate — https://beta.devmarketplace.com/gig/f77395e7-1a49-4a2a-8d6c-ad3efaaac3c9 (see `gigs/01-supabase-totp-gate/`)
+- Zod-validated board ops + narration — https://beta.devmarketplace.com/gig/a69aec46-bd62-4a70-9128-9d18db35d122 (see `gigs/02-zod-board-ops-narration/`)
+
+See [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md) for every AI service, model, and tool used.
 
 ## Run
 
@@ -22,6 +32,8 @@ Add these in the workspace **Secrets** panel (local dev: your shell env / `.env.
 | `SUPABASE_SERVICE_ROLE_KEY` | not needed by the current Core flow | **server only**, bypasses RLS — never `NEXT_PUBLIC_` |
 | `GEMINI_API_KEY` | yes (diagnose, board, quiz coach) | **server only** |
 | `GEMINI_MODEL` | optional | defaults to `gemini-3.5-flash-lite` when empty; set it to override |
+| `VAPI_API_KEY` | optional | **server only**; Vapi voice narration — Web Speech is used when empty |
+| `VAPI_ASSISTANT_ID` | optional | **server only**; paired with `VAPI_API_KEY` |
 | `UPLIFT_AI_API_KEY` | optional, later phase | **server only**; Web Speech is used when empty |
 
 **Missing config is shown on screen, not as a blank page:**
@@ -63,7 +75,7 @@ npm run dev     # walk the demo click path locally
 3. Deploy, then add the resulting URL to Supabase **Redirect URLs** (Authentication → URL Configuration).
 4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play (SVG board by default) → ask → 2bx task → quiz → summary. Sign out; sign in as a second account and confirm the first account's lessons are not listed.
 
-**Live URL:** _fill in after the first Vercel deploy._
+**Live URL:** https://ai-tutor-devmarketplace.vercel.app/
 
 ## Demo click path
 
