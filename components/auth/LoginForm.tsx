@@ -66,7 +66,7 @@ export function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <Button type="submit" className="auth-submit w-full" disabled={busy}>
-        {busy ? "Signing in…" : "Continue"}
+        {busy ? <><span className="warm-spinner" aria-hidden="true" /> Signing in…</> : "Continue"}
       </Button>
     </form>
   );

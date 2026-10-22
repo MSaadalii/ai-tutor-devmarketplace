@@ -83,7 +83,7 @@ export function QuizPanel({
           className="h-10 flex-1 rounded-md border border-stone-300 px-3 text-sm"
         />
         <Button onClick={() => void handleSubmit()} disabled={loading || !answer}>
-          {loading ? "Submitting…" : "Submit"}
+          {loading ? <><span className="warm-spinner" aria-hidden="true" /> Submitting…</> : "Submit"}
         </Button>
       </div>
     </section>

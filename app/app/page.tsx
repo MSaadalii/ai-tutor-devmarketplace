@@ -174,7 +174,7 @@ export default function AppHomePage() {
                   </div>
                   <Button className="dashboard-cta" size="sm" disabled={creating !== null || !userId}
                     onClick={() => void startPack(pack.id, pack.version)}>
-                    {creating === pack.id ? "Starting…" : "Start lesson"}<span aria-hidden="true">↗</span>
+                    {creating === pack.id ? <><span className="warm-spinner" aria-hidden="true" /> Starting…</> : <>Start lesson <span aria-hidden="true">↗</span></>}
                   </Button>
                 </article>
               ))}
@@ -192,7 +192,7 @@ export default function AppHomePage() {
               <div className="dashboard-brief-footer">
                 <span>{topicBrief.length}/2000 · Introductory lesson, no grades</span>
                 <Button type="submit" className="dashboard-cta" disabled={!userId || creating !== null || !topicBrief.trim()}>
-                  {creating === "topic-brief" ? "Starting…" : "Start topic lesson"}<span aria-hidden="true">↗</span>
+                  {creating === "topic-brief" ? <><span className="warm-spinner" aria-hidden="true" /> Starting…</> : <>Start topic lesson <span aria-hidden="true">↗</span></>}
                 </Button>
               </div>
             </form>
@@ -205,7 +205,10 @@ export default function AppHomePage() {
             {!loading && sessions.length > 0 ? <span className="dashboard-session-count">{sessions.length} {sessions.length === 1 ? "lesson" : "lessons"}</span> : null}
           </div>
           {loading ? (
-            <div className="dashboard-empty">Gathering your lessons…</div>
+            <div className="dashboard-loading-list" role="status" aria-label="Loading saved lessons">
+              <span className="dashboard-loading-label"><span className="warm-spinner" aria-hidden="true" /> Gathering your lessons</span>
+              {[0, 1, 2].map((item) => <div className="dashboard-skeleton-row" key={item} aria-hidden="true"><span /><div><i /><i /></div><b /></div>)}
+            </div>
           ) : sessions.length === 0 ? (
             <div className="dashboard-empty"><span aria-hidden="true">✧</span><p>Your learning journey starts here.</p><small>Start a guided lesson or bring your own topic above.</small></div>
           ) : (

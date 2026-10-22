@@ -34,7 +34,7 @@ export function toErrorResponse(error: unknown, fallback: string) {
   } else if (/not found/i.test(raw) && /model/i.test(raw)) {
     code = "gemini_model";
     message =
-      "Gemini model not found. Check GEMINI_MODEL or try gemini-2.0-flash " +
+      "Gemini model not found. Check GEMINI_MODEL or try gemini-3.5-flash-lite " +
       "or gemini-flash-latest.";
   } else if (/429|quota|RESOURCE_EXHAUSTED/i.test(raw)) {
     code = "gemini_quota";

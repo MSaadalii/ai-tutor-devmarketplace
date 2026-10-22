@@ -79,7 +79,7 @@ export function SignupForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <Button type="submit" className="auth-submit w-full" disabled={busy}>
-        {busy ? "Creating account…" : "Create account"}
+        {busy ? <><span className="warm-spinner" aria-hidden="true" /> Creating account…</> : "Create account"}
       </Button>
       <p className="text-xs text-stone-500">
         Next step: secure the account with an authenticator app (TOTP 2FA).

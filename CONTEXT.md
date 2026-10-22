@@ -149,7 +149,7 @@ npm run dev     # walk the demo click path
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `GEMINI_API_KEY`
-   - `GEMINI_MODEL` (optional; default: `gemini-2.0-flash`, set it to override)
+   - `GEMINI_MODEL` (optional; default: `gemini-3.5-flash-lite`, set it to override)
    - Do **not** add `SUPABASE_SERVICE_ROLE_KEY` unless a feature requires it.
 3. Deploy → add the Vercel URL to Supabase Redirect URLs.
 4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play → ask → 2bx task → quiz → summary. Sign out and sign in as a second account — confirm first account's lessons are not listed.
@@ -199,8 +199,13 @@ All 8 tables have RLS enabled. Child insert/update policies verify the session b
 - `npm run build` must pass locally before pushing to Vercel.
 - No secret values belong in this file.
 
-## Last update (Phase 10 — Gemini model configuration): `lib/ai/gemini.ts` now defaults to `gemini-2.0-flash` while preserving the optional `GEMINI_MODEL` override. Model-not-found guidance recommends trying `gemini-2.0-flash` or `gemini-flash-latest`; README environment guidance reflects the default. No secrets or unrelated behavior changed. Not built/run here.
+## Last update (Phase 17 — Warm branded loading feedback): Existing busy states now use a small warm spinner in `/app` Start buttons, lesson Diagnose/Ask/board-task/quiz submissions, sign-in/sign-up/2FA forms; lesson session loading has a branded status card and `/app` saved lessons use beige skeleton rows. Reuses existing flags and preserves actions, requests, and auth logic. Reduced-motion preference is respected. No deploy/build verification performed.
+
+## Previous update (Phase 13 — Gemini default model update): `lib/ai/gemini.ts` defaults to `gemini-3.5-flash-lite` and preserves the optional `GEMINI_MODEL` override. Model-not-found guidance recommends `gemini-3.5-flash-lite` or `gemini-flash-latest`; README and `.env.example` note the default. No secrets or unrelated behavior changed. Not built/run here.
 
 ## Previous update (Phase 9 — Warm lesson chrome polish): UI-only. `/lesson/[id]` now uses a `.lesson-chrome` marker plus scoped CSS in `app/globals.css` (beige page/header, charcoal pill buttons, soft cards for the panels, teal-accent caption bar and stepper, warm inputs/notices). Small class additions only in LessonClient, LessonStepper, BoardToolbar, CaptionBar; playback, board, AI, API, grading and auth logic untouched. Not built/run here.
 
 ## Last update (Phase 12 — Vapi end-detection fix): `lib/voice/vapi.ts` now fires `onEnd` exactly once per `speakVapi` via audio-drain (last source `onended` + pad) or Vapi JSON stopped/finished events, with no silence polling; `playSteps` auto-advances after dwell, and Pause/Replay cancel via `playbackId` + `cancelVapi`.
+
+## Raise hand (barge-in)
+- `components/lesson/RaiseHand.tsx` + `lib/voice/recognize.ts`: Raise hand stops Vapi/Web Speech narration (bumps playbackId), listens via browser Web Speech Recognition, shows the transcript, and submits it through the same `/api/ai/board-tutor` answer path as text Ask. The answer shows in captions/answer area and is spoken via Web Speech. Mic denied/unsupported shows a message; text Ask still works. Press Play to resume. No board ops/grading changes.

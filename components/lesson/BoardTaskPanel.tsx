@@ -26,7 +26,7 @@ export function BoardTaskPanel({
       </p>
       <div className="mt-3 flex gap-2">
         <Button onClick={() => void handleSubmit()} disabled={loading}>
-          {loading ? "Checking…" : "Check selection"}
+          {loading ? <><span className="warm-spinner" aria-hidden="true" /> Checking…</> : "Check selection"}
         </Button>
       </div>
       {result ? (
