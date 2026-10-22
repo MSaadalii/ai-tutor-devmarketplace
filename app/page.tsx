@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { BoardMock } from "@/components/landing/BoardMock";
@@ -61,16 +60,6 @@ export default async function HomePage() {
             </ul>
           </div>
           <div className="landing-hero-visual">
-            <div className="landing-tutor-art" aria-hidden="true">
-              <Image
-                src="/landing/tutor-hero.png"
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 640px) 0px, (max-width: 1024px) 34vw, 250px"
-                className="landing-tutor-image"
-              />
-            </div>
             <div className="landing-hero-board">
               <BoardMock />
             </div>
