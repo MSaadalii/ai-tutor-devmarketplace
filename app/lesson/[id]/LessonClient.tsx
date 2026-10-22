@@ -20,6 +20,7 @@ import { speakLine, cancelSpeech, isSpeechSupported } from "@/lib/voice/speech";
 import { speakVapi, cancelVapi, connectVapi, closeVapi, isVapiReady } from "@/lib/voice/vapi";
 import { getPack, BINOMIAL_SQUARE_ID } from "@/lib/packs/binomial_square";
 import { DiagnosePanel, probeText, type Diagnosis } from "@/components/lesson/DiagnosePanel";
+import { RaiseHand } from "@/components/lesson/RaiseHand";
 import { QuestionPanel } from "@/components/lesson/QuestionPanel";
 import { BoardTaskPanel } from "@/components/lesson/BoardTaskPanel";
 import { QuizPanel, type QuizResult } from "@/components/lesson/QuizPanel";
@@ -377,10 +378,24 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     };
   }, []);
 
-  async function handleAskQuestion(text: string) {
+  async function handleVoiceQuestion(text: string) {
+    const answer = await handleAskQuestion(text);
+    if (answer) {
+      setCaption(answer);
+      speakLine(answer, language, undefined, () => {});
+    }
+  }
+
+  function handleRaiseHand() {
+    stopPlayback();
+    setPlaying(false);
+  }
+
+  async function handleAskQuestion(text: string): Promise<string | null> {
     stopPlayback();
     setPlaying(false);
     setError(null);
+    let answer: string | null = null;
     await guarded(async () => {
       const data = await postJson<{ notes?: string; steps?: NarrationStep[] }>("/api/ai/board-tutor", {
         session_id: sessionId,
@@ -390,7 +405,8 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         selected_element_ids: selectedElementIds,
         language,
       });
-      setAnswerText(data.notes ?? "Answer received.");
+      answer = data.notes ?? "Answer received.";
+      setAnswerText(answer);
       if (isBrief && data.steps?.length) {
         // Namespace answer IDs so additions cannot collide with the teach board.
         const prefix = `answer_${Date.now()}_`;
@@ -405,6 +421,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         setAnswerSteps((prev) => [...prev, ...additions]);
       }
     });
+    return answer;
   }
 
   async function handleTaskSubmit() {
@@ -495,7 +512,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   if (loading) {
     return (
       <PageShell actions={<SignOutButton />}>
-        <p className="lesson-chrome text-sm text-stone-500">Loading lesson…</p>
+        <p className="lesson-chrome lesson-loading-state" role="status"><span className="warm-spinner" aria-hidden="true" /> Loading lesson…</p>
       </PageShell>
     );
   }
@@ -599,6 +616,14 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             diagnosis={diagnosis}
             onDiagnose={handleDiagnose}
             probeAnswers={probeAnswers}
+          />
+        )}
+
+        {(activePhase === "question" || activePhase === "board_task") && (
+          <RaiseHand
+            language={language}
+            onRaise={handleRaiseHand}
+            onQuestion={handleVoiceQuestion}
           />
         )}
 

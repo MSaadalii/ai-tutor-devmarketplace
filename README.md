@@ -21,7 +21,7 @@ Add these in the workspace **Secrets** panel (local dev: your shell env / `.env.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | browser + server (safe to expose; RLS protects data) |
 | `SUPABASE_SERVICE_ROLE_KEY` | not needed by the current Core flow | **server only**, bypasses RLS — never `NEXT_PUBLIC_` |
 | `GEMINI_API_KEY` | yes (diagnose, board, quiz coach) | **server only** |
-| `GEMINI_MODEL` | optional | defaults to `gemini-2.0-flash` when empty; set it to override |
+| `GEMINI_MODEL` | optional | defaults to `gemini-3.5-flash-lite` when empty; set it to override |
 | `UPLIFT_AI_API_KEY` | optional, later phase | **server only**; Web Speech is used when empty |
 
 **Missing config is shown on screen, not as a blank page:**
@@ -58,7 +58,7 @@ npm run dev     # walk the demo click path locally
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `GEMINI_API_KEY`
-   - `GEMINI_MODEL` (optional — defaults to `gemini-2.0-flash`; set it to override)
+   - `GEMINI_MODEL` (optional — defaults to `gemini-3.5-flash-lite`; set it to override)
    - Do **not** add `SUPABASE_SERVICE_ROLE_KEY` unless a feature needs it.
 3. Deploy, then add the resulting URL to Supabase **Redirect URLs** (Authentication → URL Configuration).
 4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play (SVG board by default) → ask → 2bx task → quiz → summary. Sign out; sign in as a second account and confirm the first account's lessons are not listed.

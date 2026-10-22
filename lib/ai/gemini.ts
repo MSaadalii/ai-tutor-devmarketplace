@@ -3,7 +3,7 @@ import { z, type ZodTypeAny } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ConfigError } from "@/lib/apiError";
 
-export const DEFAULT_GEMINI_MODEL = "gemini-2.0-flash";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
 
 /** Read at call time; an empty GEMINI_MODEL falls back to the default. */
 export function getGeminiModelName(): string {

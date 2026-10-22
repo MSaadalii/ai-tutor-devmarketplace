@@ -176,7 +176,7 @@ export function TotpForm() {
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
       />
       <Button type="submit" className="auth-submit w-full" disabled={busy}>
-        {busy ? "Verifying…" : mode === "enroll" ? "Enable 2FA" : "Verify"}
+        {busy ? <><span className="warm-spinner" aria-hidden="true" /> Verifying…</> : mode === "enroll" ? "Enable 2FA" : "Verify"}
       </Button>
       <p className="text-center text-xs text-stone-500">
         Wrong account?{" "}
