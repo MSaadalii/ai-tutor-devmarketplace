@@ -241,3 +241,6 @@ QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the l
   - `save`: inserts `attempts` with `phase='teach_ai'`, `correct=null`, metadata `{planted, explanation, rubric, kind, ungraded, input, language}`. The check constraint already allows `teach_ai`, so no migration was added.
 - The statement is spoken via Vapi when ready, else Web Speech, with captions always on. The student answers by text or mic (`listenOnce`). If scoring fails the UI shows "Could not score" and no pass is recorded.
 - Not built/run here.
+
+## Board polish + answer append (latest)
+`SvgBoard.tsx` repaints the area model (distinct beige/teal/sage region fills, stronger borders, centered labels, `x²` formatting), single exclusive amber active highlight with pulse, subtle step pill, wider (max 720px) board whose viewBox height grows to fit appended answer content, CSS-only enter fade respecting `prefers-reduced-motion`. Element IDs and grading unchanged. Topic-brief Ask answers: `briefTutor` strips non-add ops server-side; `LessonClient` keeps additive-only, `answer_`-prefixed, below-the-scene offset. Excalidraw untouched. Not built/run here.

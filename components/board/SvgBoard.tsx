@@ -14,18 +14,46 @@ export type SvgBoardProps = {
 };
 
 const VIEWBOX_WIDTH = 400;
-const VIEWBOX_HEIGHT = 420;
+const MIN_VIEWBOX_HEIGHT = 420;
 
-// CSS animation for selected element pulse (2-3 cycles, subtle stroke pulse)
-const PULSE_STYLE = `
+// Warm lesson palette (beige / teal / charcoal).
+const INK = "#26221e";
+const REGION_PAINT: Record<string, { fill: string; stroke: string }> = {
+  region_a2: { fill: "#f4e4c1", stroke: "#8a6a3b" },
+  region_ab_1: { fill: "#cdeae3", stroke: "#1f6f66" },
+  region_ab_2: { fill: "#cdeae3", stroke: "#1f6f66" },
+  region_b2: { fill: "#e3e8d2", stroke: "#5f6f3f" },
+};
+const DEFAULT_PAINT = { fill: "#f6efe0", stroke: "#6b5f4f" };
+const ACTIVE = { fill: "#fbd36b", stroke: "#b45309" };
+const SELECTED = { fill: "#a7ddd2", stroke: "#0f766e" };
+
+const BOARD_STYLE = `
   @keyframes svgPulse {
-    0%, 100% { stroke-width: 5; opacity: 1; }
-    50% { stroke-width: 3; opacity: 0.7; }
+    0%, 100% { stroke-width: 6; }
+    50% { stroke-width: 4; }
   }
-  .svg-selected-pulse {
-    animation: svgPulse 0.6s ease-in-out 2;
+  @keyframes svgEnter { from { opacity: 0; } to { opacity: 1; } }
+  .svg-selected-pulse { animation: svgPulse 0.7s ease-in-out 2; }
+  .svg-enter { animation: svgEnter 0.35s ease-out both; }
+  .svg-fill-fade { transition: fill 0.25s ease, stroke 0.25s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .svg-selected-pulse, .svg-enter { animation: none; }
+    .svg-fill-fade { transition: none; }
   }
 `;
+
+function pretty(text: string): string {
+  return text.replace(/\^2/g, "²").replace(/\^3/g, "³");
+}
+
+function boardHeight(scene: BoardScene): number {
+  const bottom = scene.elements.reduce((m, e) => {
+    if (e.type === "text" && !e.text) return m;
+    return Math.max(m, e.y + (e.type === "text" ? (e.fontSize ?? 20) + 8 : e.height));
+  }, 0);
+  return Math.max(MIN_VIEWBOX_HEIGHT, Math.ceil(bottom + 24));
+}
 
 export function SvgBoard({
   scene,
@@ -43,16 +71,15 @@ export function SvgBoard({
         : ["region_ab_1", "region_ab_2", "region_a2", "region_b2"]
       : scene.elements.map((e) => e.id),
   );
+  const height = boardHeight(scene);
 
   return (
-    <div 
-      className="relative w-full" 
-      dir={language === "ur" ? "rtl" : "ltr"}
-    >
-      <style>{PULSE_STYLE}</style>
+    <div className="relative mx-auto w-full max-w-[720px]" dir={language === "ur" ? "rtl" : "ltr"}>
+      <style>{BOARD_STYLE}</style>
       <svg
-        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-        className="h-auto w-full rounded-lg border border-stone-200 bg-white"
+        viewBox={`0 0 ${VIEWBOX_WIDTH} ${height}`}
+        className="h-auto w-full rounded-2xl border border-[#e3d9c6] bg-[#fffdf8]"
+        style={{ minHeight: 300 }}
         role="img"
         aria-label="Lesson whiteboard"
       >
@@ -69,15 +96,12 @@ export function SvgBoard({
         ))}
 
         {currentStepIndex >= 0 && (
-          <text
-            x={VIEWBOX_WIDTH - 12}
-            y={24}
-            textAnchor="end"
-            className="fill-stone-400 text-xs"
-            style={{ fontSize: 12 }}
-          >
-            Step {currentStepIndex + 1}
-          </text>
+          <g aria-hidden="true" opacity={0.85}>
+            <rect x={VIEWBOX_WIDTH - 62} y={6} width={54} height={18} rx={9} fill="#efe6d3" />
+            <text x={VIEWBOX_WIDTH - 35} y={19} textAnchor="middle" style={{ fontSize: 10, fill: "#6b5f4f", fontWeight: 600 }}>
+              Step {currentStepIndex + 1}
+            </text>
+          </g>
         )}
       </svg>
 
@@ -105,60 +129,74 @@ function SvgElement({
   highlighted: boolean;
   onClick: () => void;
 }) {
-  const isText = element.type === "text";
   const cursor = clickable ? "pointer" : "default";
-  const stroke = selected ? "#0f766e" : element.strokeColor ?? "#1c1917";
-  const fill = selected
-    ? "#ccfbf1"
-    : element.backgroundColor ?? "transparent";
+  const fontFamily = "var(--font-geist-sans), ui-sans-serif, system-ui";
 
-  if (isText) {
+  if (element.type === "text") {
+    if (!element.text) return null;
+    const size = element.fontSize ?? 20;
     return (
       <text
         x={element.x}
-        y={element.y + (element.fontSize ?? 20)}
-        className="select-none"
+        y={element.y + size}
+        className="svg-enter select-none"
         style={{
-          fontSize: element.fontSize ?? 20,
-          fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui",
-          fill: "#1c1917",
+          fontSize: size,
+          fontFamily,
+          fill: highlighted ? ACTIVE.stroke : INK,
+          fontWeight: highlighted ? 700 : 500,
+          paintOrder: "stroke",
+          stroke: "#fffdf8",
+          strokeWidth: 3,
           direction: language === "ur" ? "rtl" : "ltr",
         }}
         onClick={onClick}
         cursor={cursor}
       >
-        {element.text}
+        {pretty(element.text)}
       </text>
     );
   }
 
+  const base = REGION_PAINT[element.id] ?? DEFAULT_PAINT;
+  const paint = highlighted ? ACTIVE : selected ? SELECTED : base;
+  const strokeWidth = highlighted ? 6 : selected ? 5 : 3;
+  const label = element.text ? pretty(element.text) : "";
+  const baseSize = element.fontSize ?? 20;
+  const size = label
+    ? Math.max(11, Math.min(baseSize + 4, (element.width - 10) / (label.length * 0.6)))
+    : baseSize;
+
   return (
-    <g onClick={onClick} cursor={cursor}>
+    <g onClick={onClick} cursor={cursor} className="svg-enter">
       <rect
         x={element.x}
         y={element.y}
         width={element.width}
         height={element.height}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={selected ? 3 : element.strokeWidth ?? 2}
-        rx={4}
-        className={highlighted ? "svg-selected-pulse" : ""}
+        fill={paint.fill}
+        stroke={paint.stroke}
+        strokeWidth={strokeWidth}
+        rx={6}
+        className={`svg-fill-fade ${highlighted ? "svg-selected-pulse" : ""}`}
       />
-      {element.text ? (
+      {label ? (
         <text
           x={element.x + element.width / 2}
-          y={element.y + element.height / 2 + 6}
+          y={element.y + element.height / 2}
           textAnchor="middle"
+          dominantBaseline="central"
           className="select-none"
           style={{
-            fontSize: element.fontSize ?? 20,
-            fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui",
-            fill: "#1c1917",
+            fontSize: size,
+            fontFamily,
+            fill: INK,
+            fontWeight: highlighted ? 800 : 600,
             direction: "ltr",
+            pointerEvents: "none",
           }}
         >
-          {element.text}
+          {label}
         </text>
       ) : null}
     </g>

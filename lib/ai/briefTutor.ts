@@ -78,7 +78,11 @@ export async function runBriefTutor(input: BoardTutorInput): Promise<BoardTutorR
     role: "board_tutor" as const, prompt, system: SYSTEM, supabase: input.supabase };
   if (input.mode === "answer") {
     const { output } = await callGeminiJson({ ...options, schema: answerSchema });
-    return { steps: (output.steps ?? []).map((s, order) => ({ ...s, order, language: input.language })), notes: output.answer };
+    // Answers may only ADD content; strip any op that could mutate the teach board.
+    const additive = (output.steps ?? []).filter(
+      (s) => s.operation.type === "add_text" || s.operation.type === "add_shape",
+    );
+    return { steps: additive.map((s, order) => ({ ...s, order, language: input.language })), notes: output.answer };
   }
   // Invalid output is retried by the existing Gemini helper, then surfaced as
   // a recoverable error. Never substitute unrelated binomial seed operations.

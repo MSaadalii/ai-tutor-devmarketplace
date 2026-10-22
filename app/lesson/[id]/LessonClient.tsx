@@ -417,16 +417,29 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
       setAnswerText(answer);
       if (isBrief && data.steps?.length) {
         // Namespace answer IDs so additions cannot collide with the teach board.
+        // Only additive ops are allowed; mutating ops (update_label, highlight,
+        // clear_highlight) are stripped so the teach diagram is never altered.
         const prefix = `answer_${Date.now()}_`;
-        const additions = data.steps.map((step) => {
-          const p = { ...step.operation.payload };
+        const adds = data.steps.filter(
+          (s) => s.operation.type === "add_text" || s.operation.type === "add_shape",
+        );
+        // Place new content below everything already on the board.
+        const bottom = (list: NarrationStep[]) => list.reduce((m, s) => {
+          const p = s.operation.payload as Record<string, unknown>;
+          if (s.operation.type !== "add_text" && s.operation.type !== "add_shape") return m;
+          const h = s.operation.type === "add_text" ? 28 : Number(p.height ?? 80);
+          return Math.max(m, Number(p.y ?? 0) + h);
+        }, 0);
+        const base = Math.max(bottom(steps), bottom(answerSteps), 380) + 24;
+        const additions = adds.map((step) => {
+          const p = { ...step.operation.payload } as Record<string, unknown>;
           for (const key of ["id", "elementId"] as const) {
             if (typeof p[key] === "string") p[key] = prefix + p[key];
           }
-          if (Array.isArray(p.elementIds)) p.elementIds = p.elementIds.map((id) => prefix + id);
-          return { ...step, operation: { ...step.operation, payload: p } };
+          p.y = base + Math.max(0, Number(p.y ?? 35) - 35);
+          return { ...step, operation: { ...step.operation, payload: p } } as NarrationStep;
         });
-        setAnswerSteps((prev) => [...prev, ...additions]);
+        if (additions.length) setAnswerSteps((prev) => [...prev, ...additions]);
       }
     });
     return answer;
