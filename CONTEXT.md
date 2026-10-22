@@ -156,7 +156,7 @@ npm run dev     # walk the demo click path
 3. Deploy → add the Vercel URL to Supabase Redirect URLs.
 4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play → ask → 2bx task → quiz → summary. Sign out and sign in as a second account — confirm first account's lessons are not listed.
 
-**Live URL:** https://ai-tutor-devmarketplace.vercel.app/
+**Live URL:** _fill in after the first Vercel deploy._
 
 ## Judge E2E — checks to run on the live URL (or locally)
 1. Sign in → `/app` → Start on Binomial Squares → `/lesson/<id>`.
@@ -251,3 +251,5 @@ QuestionPanel `onAsk` now accepts `Promise<void | string | null>` to match the l
 - Docs made judge-ready: `README.md` now leads with the **live Vercel URL** (https://ai-tutor-devmarketplace.vercel.app/), a one-line **Judge path**, and the two **DevMarketplace gig links** (TOTP gate `f77395e7-…`, Zod board ops `a69aec46-…`); the two "Live URL: fill in" placeholders are filled.
 - `AI_DISCLOSURE.md` refreshed: Gemini default `gemini-3.5-flash-lite` (override `GEMINI_MODEL`), roles `detective`/`board_tutor`/`quiz_coach`/`summary`/`viva`/`teach_ai`, Vapi + Web Speech (TTS + SpeechRecognition), Uplift AI fallback, and DevMarketplace coding-agent tools + the two gigs.
 - Build blocker review: `QuestionPanel.onAsk` is already `(text) => Promise<void | string | null>` and `LessonClient` passes `handleAskQuestion` (`Promise<string | null>`) — assignable, no TS error. teach-ai route/lib imports (`plantedSchema`, `teachRubricSchema`, `teachScoreSchema`, `validOps`, `getPack`, `getMisconception`) all exist and type-check. No new features, no deps, no touch to voice polish, PageShell, landing, viva/Teach-AI rewrites, or board viz. `npm run build` not executed here (no shell); human reruns before redeploy.
+
+Landing hero avatar restored (supersedes "Hero avatar removed"): `app/page.tsx` shows `/landing/tutor-hero.png` (`.landing-hero-tutor`) overlapping the left edge of BoardMock on ≥1024px; hidden below that so mobile stays clean. CSS is landing-only in `globals.css`; no new art, badges or purple. Not built/run here.

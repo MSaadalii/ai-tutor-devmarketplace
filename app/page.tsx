@@ -60,6 +60,8 @@ export default async function HomePage() {
             </ul>
           </div>
           <div className="landing-hero-visual">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/landing/tutor-hero.png" alt="AI tutor character" className="landing-hero-tutor" />
             <div className="landing-hero-board">
               <BoardMock />
             </div>
