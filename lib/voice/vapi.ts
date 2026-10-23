@@ -21,6 +21,40 @@ let timers: ReturnType<typeof setTimeout>[] = [];
 let tokenSeq = 0;
 let gotAudio = false;
 let endTimer: ReturnType<typeof setTimeout> | null = null;
+let watchdog: ReturnType<typeof setTimeout> | null = null;
+let lineStart = 0;
+let lineEstMs = 0;
+const WATCHDOG_PAD_MS = 2000;
+const WATCHDOG_CAP_MS = 12000;
+
+function clearWatchdog() {
+  if (watchdog) clearTimeout(watchdog);
+  watchdog = null;
+}
+
+/** Fires the pending onEnd exactly once (clears all end timers). */
+function fireEnd(token: number) {
+  const p = pending;
+  if (!p || p.token !== token) return;
+  pending = null;
+  clearWatchdog();
+  if (endTimer) clearTimeout(endTimer);
+  endTimer = null;
+  p.onEnd();
+}
+
+/** (Re)arms the watchdog: ~line duration + 2s from audio start, capped at 12s. */
+function armWatchdog() {
+  const p = pending;
+  if (!p) return;
+  clearWatchdog();
+  const queuedMs = ctx ? Math.max(0, nextTime - ctx.currentTime) * 1000 : 0;
+  const elapsed = Date.now() - lineStart;
+  const dur = Math.max(lineEstMs, elapsed + queuedMs);
+  const deadline = Math.min(WATCHDOG_CAP_MS, dur + WATCHDOG_PAD_MS);
+  const token = p.token;
+  watchdog = setTimeout(() => fireEnd(token), Math.max(0, deadline - elapsed));
+}
 
 export function isVapiReady(): boolean {
   return !disabled && ws !== null && ws.readyState === WebSocket.OPEN;
@@ -35,6 +69,7 @@ export function cancelVapi(): void {
   pending = null;
   tokenSeq += 1;
   clearTimers();
+  clearWatchdog();
   if (endTimer) clearTimeout(endTimer);
   endTimer = null;
   sources.forEach((s) => {
@@ -81,6 +116,7 @@ function playChunk(buf: ArrayBuffer) {
   nextTime = start + ab.duration;
   sources.push(src);
   gotAudio = true;
+  armWatchdog();
   // New audio arrived: any pending end is stale (mid-utterance gap).
   if (endTimer) clearTimeout(endTimer);
   endTimer = null;
@@ -102,10 +138,7 @@ function scheduleEnd(padMs: number) {
       scheduleEnd(padMs);
       return;
     }
-    if (pending && pending.token === p.token) {
-      pending = null;
-      p.onEnd();
-    }
+    fireEnd(p.token);
   }, wait);
 }
 
@@ -183,6 +216,8 @@ export function speakVapi(
   const token = tokenSeq;
   pending = { token, onEnd, onError };
   gotAudio = false;
+  lineStart = Date.now();
+  lineEstMs = Math.min(WATCHDOG_CAP_MS, text.length * 70);
   ws.send(JSON.stringify({ type: "say", content: text, endCallAfterSpoken: false }));
   timers.push(
     setTimeout(() => {
