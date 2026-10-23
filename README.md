@@ -1,112 +1,112 @@
 # Visual AI Tutor
 
-Live whiteboard tutor for STEM students: Gemini returns validated board steps, the lesson draws them with captions and optional Vapi / Web Speech narration, then continues through board Q&A, the 2bx task, quiz, summary, a live viva, and Teach-the-AI.
+[![Live demo](https://img.shields.io/badge/Live-ai--tutor--devmarketplace.vercel.app-0D9488?style=for-the-badge&logo=vercel)](https://ai-tutor-devmarketplace.vercel.app/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth_+_Postgres_+_RLS-3FCF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Gemini](https://img.shields.io/badge/Google-Gemini_2.5_/_3.5-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel)](https://ai-tutor-devmarketplace.vercel.app/)
+[![Devpost](https://img.shields.io/badge/Devpost-Build_Next_Big_Thing-003E54?style=flat-square)](https://build-next-big-thing-with-ai.devpost.com/)
 
-**Live app:** https://ai-tutor-devmarketplace.vercel.app/
+STEM whiteboard tutor: a student picks a pack or pastes a topic → **Gemini** returns Zod-validated Excalidraw/SVG board ops → live draw + captions (Vapi / Web Speech; Urdu via Web Speech) → board Q&A → 2bx task → quiz → summary → optional viva / Teach-the-AI. Auth is **Supabase email + TOTP 2FA** with RLS isolation.
 
-**Judge path (one line):** open the live URL → Sign up → set up the TOTP code → `/app` → **Start** on *Binomial Squares* → submit the pre-filled diagnosis `x^2 + 9` → **Play explanation** → **Ask** a board question → select the two `3x` regions (2bx task) → complete the **quiz** → view the **summary** (then optionally **Start viva** / **Teach the AI**).
+| | |
+|---|---|
+| **Live app** | https://ai-tutor-devmarketplace.vercel.app/ |
+| **Repository** | https://github.com/MTahaFarrukh/ai-tutor-devmarketplace |
+| **Hackathon** | [Build the Next Big Thing with AI](https://build-next-big-thing-with-ai.devpost.com/) · NED / DevMarketplace |
 
-**DevMarketplace gigs used (reusable patterns):**
-- Supabase TOTP MFA gate — https://beta.devmarketplace.com/gig/f77395e7-1a49-4a2a-8d6c-ad3efaaac3c9 (see `gigs/01-supabase-totp-gate/`)
-- Zod-validated board ops + narration — https://beta.devmarketplace.com/gig/a69aec46-bd62-4a70-9128-9d18db35d122 (see `gigs/02-zod-board-ops-narration/`)
+## Judge path (Core — M1–M4)
 
-See [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md) for every AI service, model, and tool used.
+Private window → live URL → **Sign up** → set up **TOTP 2FA** → `/app` → **Binomial Squares → Start** → submit pre-filled `x^2 + 9` → **Play explanation** → **Ask** a board question → select both `3x` regions (2bx) → **quiz** → **summary** → sign out → sign back in (data still there). Optional: **Start viva** / **Teach the AI**. Second account must not see the first account’s lessons.
 
-## Run
+## Stack
+
+| Layer | Choice |
+|-------|--------|
+| App | Next.js (App Router), TypeScript, Tailwind, shadcn/ui |
+| Auth + DB | Supabase Auth (email + TOTP MFA), Postgres, RLS |
+| AI | Google Gemini (Zod-validated JSON), mathjs for pack grading |
+| Board | SVG default; optional `@excalidraw/excalidraw` |
+| Voice | Vapi (optional) → Web Speech fallback; captions always on |
+| Host | Vercel |
+
+## DevMarketplace gigs (M6 — ≥2 published)
+
+1. [Supabase TOTP MFA gate](https://beta.devmarketplace.com/gig/f77395e7-1a49-4a2a-8d6c-ad3efaaac3c9) — `gigs/01-supabase-totp-gate/`
+2. [Zod-validated board ops + narration](https://beta.devmarketplace.com/gig/a69aec46-bd62-4a70-9128-9d18db35d122) — `gigs/02-zod-board-ops-narration/`
+
+## Project docs (M5)
+
+| File | Role |
+|------|------|
+| [`SPEC.md`](./SPEC.md) | Product scope (Core / Stretch / Roadmap) |
+| [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md) | Models, tools, OSS components |
+| [`PRIOR_WORK.md`](./PRIOR_WORK.md) | Pre-build decisions / declarations |
+| [`TECH.md`](./TECH.md) | Locked stack and fallbacks |
+| [`AGENTS.md`](./AGENTS.md) | Agent build rules |
+| [`CONTEXT.md`](./CONTEXT.md) | Session handoff |
+
+## Run locally
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env.local   # fill secrets (names below)
+npm run dev                  # http://localhost:3000
+npm run build                # production check
 ```
-
-Open http://localhost:3000. Use `npm run build` to verify a production build.
 
 ## Secrets (names only — never commit values)
 
-Add these in the workspace **Secrets** panel (local dev: your shell env / `.env.local`, which is git-ignored). `.env.example` lists every name with an empty value.
+| Name | Required | Where |
+|------|----------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | browser + server |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | browser + server (RLS) |
+| `SUPABASE_SERVICE_ROLE_KEY` | not needed for Core | server only |
+| `GEMINI_API_KEY` | yes | server only |
+| `GEMINI_MODEL` | optional | defaults to `gemini-3.5-flash-lite` |
+| `VAPI_API_KEY` / `VAPI_ASSISTANT_ID` | optional | server only; Web Speech if empty |
+| `UPLIFT_AI_API_KEY` | optional | stub / later; Web Speech if empty |
 
-| Name | Required | Where used |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | yes | browser + server (safe to expose) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | browser + server (safe to expose; RLS protects data) |
-| `SUPABASE_SERVICE_ROLE_KEY` | not needed by the current Core flow | **server only**, bypasses RLS — never `NEXT_PUBLIC_` |
-| `GEMINI_API_KEY` | yes (diagnose, board, quiz coach) | **server only** |
-| `GEMINI_MODEL` | optional | defaults to `gemini-3.5-flash-lite` when empty; set it to override |
-| `VAPI_API_KEY` | optional | **server only**; Vapi voice narration — Web Speech is used when empty |
-| `VAPI_ASSISTANT_ID` | optional | **server only**; paired with `VAPI_API_KEY` |
-| `UPLIFT_AI_API_KEY` | optional, later phase | **server only**; Web Speech is used when empty |
+Missing config shows on-screen notices (not a blank page). `GET /api/health` returns booleans only.
 
-**Missing config is shown on screen, not as a blank page:**
+## Database
 
-- Supabase: a red notice on `/login`, `/signup`, `/verify-2fa` and `/app` (and the lesson page).
-- Gemini: API routes return JSON `{ "error": "...", "code": "missing_config" }` (HTTP 503); the lesson page shows that message in a red notice, and also warns on load via `GET /api/health` (booleans only, no values).
+Apply **`supabase/migrations/0001_core_schema.sql`** once (Dashboard SQL Editor or `supabase db push`). Idempotent. Then optionally run `supabase/tests/rls_isolation.sql` (expects `RLS ISOLATION: PASS`).
 
-## Database: apply exactly ONE migration
+Older migration filenames in the folder are no-op stubs for history only.
 
-Apply **`supabase/migrations/0001_core_schema.sql`** (Supabase Dashboard → SQL Editor → paste → Run, or `supabase db push`). It is idempotent and creates all tables, indexes, triggers and the RLS policies.
+## Auth (Supabase)
 
-`0001_core_placeholder.sql` and `20261019072223_create_core_schema.sql` are now **no-op stubs** (`select 1;`) kept only so history is readable — applying them is harmless; delete them with `git rm` if you prefer.
+1. Enable **Email** provider and **MFA (TOTP)**.
+2. For a fast judge demo you may turn off “Confirm email”.
+3. Site URL + Redirect URLs: deployed origin and `http://localhost:3000/**`.
 
-Then verify isolation: sign up two accounts and run `supabase/tests/rls_isolation.sql` in the SQL Editor (expects `RLS ISOLATION: PASS`). Details in `CONTEXT.md`.
+## Deploy (Vercel)
 
-## Auth setup (Supabase)
-
-1. Authentication → Providers: enable **Email** (email/password). Enable **MFA (TOTP)** under Authentication → Multi-Factor (on by default for new projects).
-2. If "Confirm email" is on, the user must click the inbox link before signing in. For a fast judge demo you may turn it off.
-3. Authentication → URL Configuration: set **Site URL** to the deployed URL and add `https://<your-app>.vercel.app/**` and `http://localhost:3000/**` to **Redirect URLs**.
-
-## Deploy to Vercel
-
-### Before you push
-```bash
-npm install
-npm run build   # fix any TypeScript/lint errors first
-npm run dev     # walk the demo click path locally
-```
-
-### Steps
-1. Push the repo to GitHub → Vercel → **Add New Project** → import it (framework: Next.js; build command `npm run build`; no output directory override).
-2. Project Settings → Environment Variables → add for **Production + Preview**:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `GEMINI_API_KEY`
-   - `GEMINI_MODEL` (optional — defaults to `gemini-3.5-flash-lite`; set it to override)
-   - Do **not** add `SUPABASE_SERVICE_ROLE_KEY` unless a feature needs it.
-3. Deploy, then add the resulting URL to Supabase **Redirect URLs** (Authentication → URL Configuration).
-4. Smoke test the public URL: sign up → TOTP → `/app` → Start Binomial Squares → diagnose → Play (SVG board by default) → ask → 2bx task → quiz → summary. Sign out; sign in as a second account and confirm the first account's lessons are not listed.
+1. Import the GitHub repo (Next.js, `npm run build`).
+2. Set Production + Preview env: `NEXT_PUBLIC_SUPABASE_*`, `GEMINI_API_KEY`, optional `GEMINI_MODEL` / Vapi keys. Do not expose service role to the client.
+3. Add the Vercel URL to Supabase Redirect URLs.
+4. Smoke the **Judge path** above on the public URL.
 
 **Live URL:** https://ai-tutor-devmarketplace.vercel.app/
 
 ## Demo click path
 
-1. Open **Start lesson** on `/` and create an account, or use **Sign in**.
-2. Complete the authenticator setup/code at `/verify-2fa`.
-3. On `/app`, choose **Binomial Squares → Start**.
-4. On the lesson page, submit the diagnostic answer (`x^2+9` is pre-filled), then press **Play explanation**. Captions are always visible. The board defaults to SVG (always works). Press **Try Excalidraw ↗** to switch to the sketch renderer; it auto-falls back to SVG if the module fails to load.
-5. Ask a board question, select the two `3x` regions, complete the quiz, and show the summary.
+1. **Start lesson** / **Sign in** → TOTP at `/verify-2fa`.
+2. `/app` → **Binomial Squares → Start**.
+3. Diagnose (`x^2+9`) → **Play explanation** (captions on; SVG board default; **Try Excalidraw** optional).
+4. Ask → select both `3x` regions → quiz → summary.
+5. Language toggle: switch EN/UR, then **Play again** for narration in that language (board labels may stay English).
 
-## Topic-brief path (Core Phase 5)
+## Topic-brief path
 
-On `/app`, enter a nonblank topic brief (up to 2,000 characters) and choose **Start topic lesson**. The owned Supabase session stores `topic_brief` with `pack_id: null` using the existing schema. Press **Play explanation** immediately: no Detective, forced misconception, or pack board task. Gemini teaches from the stored brief on an initially empty SVG board (Excalidraw remains opt-in), with captions and optional Web Speech. Thin briefs should elicit stated assumptions/uncertainty; invalid drawings are retried once, then shown as a recoverable error, never replaced with binomial operations.
-
-Ask a text question, or finish with **Ungraded summary** after viewing the explanation. Brief lessons have no quiz, score, or mastery claim; summaries quote saved narration. Saved brief narration can be replayed without another Gemini call after reopening; summaries are restored from Supabase. Existing Supabase configuration/migration is required; no new schema or secrets were added. Pack lessons retain the Judge path above.
-
-Manual checks (human-run; no shell/browser verification was available during this change):
-- Blank/whitespace brief cannot start; 2,000 characters accepted, input cannot exceed the limit.
-- Try “photosynthesis, introductory biology” and a thin “physics” brief: no binomial scene, clear narration and uncertainty for the thin brief.
-- Ask, pause/replay, finish: summary contains actual saved narration and an ungraded notice, with no pack scores.
-- Reload/open the saved brief lesson; replay and summary remain available. A second account cannot open it.
-- Missing Gemini config/invalid output shows an error, not a seeded pack lesson. A brief session cannot call either quiz API alias for pack grading.
-- Regression: Binomial Squares → Diagnose → Play → Ask → 2bx task → Quiz → Summary.
+On `/app`, paste a brief (≤2,000 chars) → **Start topic lesson**. No Detective / 2bx / quiz; Gemini teaches from the brief on an empty board; **Ungraded summary**. Pack Judge path unchanged.
 
 ## Key paths
 
-- `components/layout/PageShell.tsx` — shared page chrome used by every page.
-- `lib/apiError.ts` — `ConfigError` + `toErrorResponse` (clear JSON errors for missing Gemini/Supabase config, bad key, bad model, quota).
-- `lib/routes/sessionGuard.ts` — every API route confirms the session belongs to the signed-in user.
-- `components/board/*`, `lib/board/ops.ts` — Excalidraw/SVG board and shared op replay.
-- `app/lesson/[id]/LessonClient.tsx` — lesson phases, playback, error display.
-
-## Project docs
-
-See [`SPEC.md`](./SPEC.md), [`AGENTS.md`](./AGENTS.md), [`TECH.md`](./TECH.md), and [`CONTEXT.md`](./CONTEXT.md).
+- `app/lesson/[id]/LessonClient.tsx` — lesson phases, playback, language toggle
+- `components/board/*`, `lib/board/ops.ts` — SVG / Excalidraw + op replay
+- `lib/ai/*` — Gemini roles + Zod schemas + teachMerge
+- `lib/routes/sessionGuard.ts` — ownership on API routes
+- `lib/apiError.ts` — clear config / provider errors
