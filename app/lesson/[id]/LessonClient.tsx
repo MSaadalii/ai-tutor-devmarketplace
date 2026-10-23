@@ -82,6 +82,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [summary, setSummary] = useState<string[] | null>(null);
   const [vivaActive, setVivaActive] = useState(false);
+  const [languageHint, setLanguageHint] = useState(false);
 
   const activePhase = useMemo(() => {
     if (summary) return "summary";
@@ -510,16 +511,15 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
   function changeLanguage(next: AppLanguage) {
     if (next === language) return;
-    if (isBrief) {
-      stopPlayback();
-      setPlaying(false);
-      setSteps([]);
-      setSummary(null);
-      setAnswerSteps([]);
-      setCurrentStepIndex(-1);
-      setCaption("");
-      setAnswerText(null);
-    }
+    stopPlayback();
+    setPlaying(false);
+    setSteps([]);
+    setSummary(null);
+    setAnswerSteps([]);
+    setCurrentStepIndex(-1);
+    setCaption("");
+    setAnswerText(null);
+    setLanguageHint(true);
     setLanguage(next);
   }
 
@@ -605,6 +605,11 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
             اردو
           </Button>
         </div>
+        {languageHint ? (
+          <p className="text-xs text-stone-600" role="status">
+            Press Play again for {language === "ur" ? "Urdu" : "English"} narration.
+          </p>
+        ) : null}
 
         <div className="lesson-grid">
         <div className="lesson-main space-y-4">
