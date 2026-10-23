@@ -8,7 +8,7 @@
 import type { AppLanguage } from "@/types";
 
 const RATE = 16000;
-const SILENCE_MS = 150;
+const SILENCE_MS = 120;
 const FIRST_AUDIO_TIMEOUT_MS = 9000;
 
 let ws: WebSocket | null = null;
@@ -24,8 +24,8 @@ let endTimer: ReturnType<typeof setTimeout> | null = null;
 let watchdog: ReturnType<typeof setTimeout> | null = null;
 let lineStart = 0;
 let lineEstMs = 0;
-const WATCHDOG_PAD_MS = 2000;
-const WATCHDOG_CAP_MS = 12000;
+const WATCHDOG_PAD_MS = 400;
+const WATCHDOG_CAP_MS = 10000;
 
 function clearWatchdog() {
   if (watchdog) clearTimeout(watchdog);
@@ -43,7 +43,7 @@ function fireEnd(token: number) {
   p.onEnd();
 }
 
-/** (Re)arms the watchdog: ~line duration + 2s from audio start, capped at 12s. */
+/** (Re)arms the watchdog (safety net): max(queued audio end, text estimate) + 400ms, capped at 10s. */
 function armWatchdog() {
   const p = pending;
   if (!p) return;

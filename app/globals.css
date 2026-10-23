@@ -285,3 +285,40 @@ body {
     justify-content: flex-end;
   }
 }
+
+/* Lesson two-column layout (presentational only) */
+.lesson-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+.lesson-main,
+.lesson-side {
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .lesson-grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr);
+    align-items: start;
+  }
+  .lesson-side {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+/* Viva call-like overlay (presentation only) */
+.viva-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 1.5rem 1rem;
+  background: rgba(38, 34, 30, .55);
+}
+.viva-overlay-inner { width: 100%; max-width: 640px; }

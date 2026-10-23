@@ -81,6 +81,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
 
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [summary, setSummary] = useState<string[] | null>(null);
+  const [vivaActive, setVivaActive] = useState(false);
 
   const activePhase = useMemo(() => {
     if (summary) return "summary";
@@ -297,7 +298,7 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
     setCaption(step.spokenLine);
 
     const stepStartTime = Date.now();
-    const MIN_DWELL_MS = 500;
+    const MIN_DWELL_MS = 300;
 
     const advance = () => {
       if (playbackId === playbackIdRef.current) {
@@ -605,6 +606,8 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           </Button>
         </div>
 
+        <div className="lesson-grid">
+        <div className="lesson-main space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <BoardToolbar
             onPlay={playBoard}
@@ -650,6 +653,8 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
           fallback={useSvgFallback ? "svg" : "excalidraw"}
         />
 
+        </div>
+        <aside className="lesson-side space-y-4">
         {activePhase === "diagnose" && (
           <DiagnosePanel
             problem={PROBLEM}
@@ -700,7 +705,12 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         {(isBrief
           ? steps.length > 0 && !playing && currentStepIndex >= steps.length - 1
           : activePhase === "summary_ready" || (summary !== null && quizResults.length === pack.quiz.length)) ? (
-          <VivaPanel sessionId={sessionId} language={language} isBrief={isBrief} onCaption={setCaption} />
+          <div className={vivaActive ? "viva-overlay" : undefined}>
+            <div className={vivaActive ? "viva-overlay-inner space-y-3" : undefined}>
+              {vivaActive && caption ? <p className="lesson-caption p-3">{caption}</p> : null}
+              <VivaPanel sessionId={sessionId} language={language} isBrief={isBrief} onCaption={setCaption} onOpenChange={setVivaActive} />
+            </div>
+          </div>
         ) : null}
 
         {steps.length > 0 && !playing && currentStepIndex >= steps.length - 1 ? (
@@ -716,6 +726,8 @@ export function LessonClient({ sessionId }: { sessionId: string }) {
         {summary ? (
           <SummaryPanel bullets={summary} language={language} />
         ) : null}
+        </aside>
+        </div>
       </div>
     </PageShell>
   );
