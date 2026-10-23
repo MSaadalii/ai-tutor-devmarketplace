@@ -134,11 +134,17 @@ function SvgElement({
 
   if (element.type === "text") {
     if (!element.text) return null;
-    const size = element.fontSize ?? 20;
+    const text = pretty(element.text);
+    const maxW = VIEWBOX_WIDTH - 8 - Math.max(4, element.x);
+    const wanted = element.fontSize ?? 20;
+    const size = Math.max(9, Math.min(wanted, maxW / (text.length * 0.58)));
+    const estW = text.length * size * 0.6;
     return (
       <text
-        x={element.x}
+        x={Math.max(4, element.x)}
         y={element.y + size}
+        textLength={estW > maxW ? maxW : undefined}
+        lengthAdjust="spacingAndGlyphs"
         className="svg-enter select-none"
         style={{
           fontSize: size,
@@ -153,7 +159,7 @@ function SvgElement({
         onClick={onClick}
         cursor={cursor}
       >
-        {pretty(element.text)}
+        {text}
       </text>
     );
   }
@@ -163,9 +169,17 @@ function SvgElement({
   const strokeWidth = highlighted ? 6 : selected ? 5 : 3;
   const label = element.text ? pretty(element.text) : "";
   const baseSize = element.fontSize ?? 20;
+  const availW = Math.max(10, element.width - 16);
+  const availH = Math.max(10, element.height - 12);
   const size = label
-    ? Math.max(11, Math.min(baseSize + 4, (element.width - 10) / (label.length * 0.6)))
+    ? Math.max(8, Math.min(baseSize + 4, availH * 0.7, availW / (label.length * 0.6)))
     : baseSize;
+  const vbAvail = Math.max(10, VIEWBOX_WIDTH - 8);
+  const fitLen = label ? Math.min(availW, vbAvail, label.length * size * 0.62) : 0;
+  const cx = Math.min(
+    VIEWBOX_WIDTH - 4 - fitLen / 2,
+    Math.max(4 + fitLen / 2, element.x + element.width / 2),
+  );
 
   return (
     <g onClick={onClick} cursor={cursor} className="svg-enter">
@@ -182,10 +196,12 @@ function SvgElement({
       />
       {label ? (
         <text
-          x={element.x + element.width / 2}
+          x={cx}
           y={element.y + element.height / 2}
           textAnchor="middle"
           dominantBaseline="central"
+          textLength={fitLen}
+          lengthAdjust="spacingAndGlyphs"
           className="select-none"
           style={{
             fontSize: size,

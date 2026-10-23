@@ -31,14 +31,16 @@ async function api<T>(body: Record<string, unknown>): Promise<T> {
 }
 
 export function VivaPanel({
-  sessionId, language, isBrief, onCaption,
+  sessionId, language, isBrief, onCaption, onOpenChange,
 }: {
   sessionId: string;
   language: AppLanguage;
   isBrief: boolean;
   onCaption: (t: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<VivaQuestion[]>([]);
@@ -149,6 +151,12 @@ export function VivaPanel({
     });
   }
 
+  function endViva() {
+    stopListen.current(); setListening(false);
+    cancelSpeech(); cancelVapi();
+    setOpen(false);
+  }
+
   if (!open) {
     return (
       <div className="lesson-card space-y-2 p-4 text-sm">
@@ -161,7 +169,11 @@ export function VivaPanel({
 
   return (
     <section className="lesson-card space-y-3 p-4 text-sm" aria-label="Viva">
-      <h2 className="font-medium">Viva{isBrief ? " · Ungraded topic practice" : ""}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-medium">Viva{isBrief ? " · Ungraded topic practice" : ""}</h2>
+        <Button size="sm" variant="outline" onClick={endViva}>End viva</Button>
+      </div>
+      {listening ? <p className="font-medium text-teal-800" role="status">● Listening…</p> : null}
       {!done && q ? (
         <>
           <p className="text-xs text-stone-600">Question {idx + 1} of {questions.length} · {Math.max(0, left)}s left</p>
