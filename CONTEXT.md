@@ -257,3 +257,5 @@ Landing hero avatar restored (supersedes "Hero avatar removed"): `app/page.tsx` 
 Landing hero now uses a single `public/landing/hero-scene.png` (`.landing-hero-scene` / `-img`, ~740px desktop, -6% right overhang, no card chrome); BoardMock and tutor-hero.png removed from the hero (supersedes the avatar-restore note). Not built/run here.
 
 Narration auto-advance fix: `lib/voice/vapi.ts` now routes every end through `fireEnd(token)` (exactly once; clears end timer + watchdog) and arms a watchdog on audio start/each chunk (~max(text-length estimate, queued audio)+2s, capped 12s) that forces `onEnd` if drain/JSON signals never arrive. `cancelVapi` clears the watchdog. No-audio Vapi hangs still fail after 9s into the Web Speech fallback (`onSpeechEnd`). `playSteps` unchanged (playbackId guards stale callbacks). Not built/run here.
+
+Saved lessons list (`app/app/page.tsx`): rows show the pack title from `listPacks()` (fallback pack_id) or a truncated topic brief; subline "Pack/Topic · status". No filtering of in_progress sessions; no schema change. Not built/run here.

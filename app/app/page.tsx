@@ -136,6 +136,13 @@ export default function AppHomePage() {
     }
   }
 
+  function sessionTitle(s: LearningSessionRow): string {
+    if (s.pack_id) return listPacks().find((p) => p.id === s.pack_id)?.title ?? s.pack_id;
+    const brief = (s.topic_brief ?? "").trim();
+    if (!brief) return "Topic brief";
+    return brief.length > 60 ? `${brief.slice(0, 60)}…` : brief;
+  }
+
   return (
     <PageShell actions={<SignOutButton />}>
       <div className="dashboard">
@@ -217,8 +224,8 @@ export default function AppHomePage() {
                 <li key={s.id} className="dashboard-session-row">
                   <span className="dashboard-session-icon" aria-hidden="true">{s.pack_id ? "▱" : "✎"}</span>
                   <div className="dashboard-session-copy">
-                    <p>{s.pack_id ?? "Topic brief"}</p>
-                    <span>{new Date(s.created_at).toLocaleString()} <i>·</i> {s.language}</span>
+                    <p>{sessionTitle(s)}</p>
+                    <span>{s.pack_id ? "Pack" : "Topic"} <i>·</i> {s.status.replaceAll("_", " ")} <i>·</i> {new Date(s.created_at).toLocaleString()} <i>·</i> {s.language}</span>
                   </div>
                   <span className={`dashboard-status ${s.status === "in_progress" ? "is-progress" : ""}`}>{s.status.replaceAll("_", " ")}</span>
                   <Link href={`/lesson/${s.id}`} className="dashboard-open">Continue <span aria-hidden="true">→</span></Link>
